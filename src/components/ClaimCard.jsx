@@ -16,6 +16,7 @@ const ClaimCard = ({ claim, isAdmin = false }) => {
       case 'pending': return FiClock;
       case 'approved': return FiCheckCircle;
       case 'rejected': return FiXCircle;
+      case 'verified': return FiCheckCircle;
       default: return FiFileText;
     }
   };
@@ -26,6 +27,7 @@ const ClaimCard = ({ claim, isAdmin = false }) => {
       case 'approved': return 'text-green-600 bg-green-100';
       case 'rejected': return 'text-red-600 bg-red-100';
       case 'under-review': return 'text-blue-600 bg-blue-100';
+      case 'verified': return 'text-green-600 bg-green-100';
       default: return 'text-gray-600 bg-gray-100';
     }
   };
@@ -37,7 +39,7 @@ const ClaimCard = ({ claim, isAdmin = false }) => {
       case 'rejected': return 'Rechazado';
       case 'under-review': return 'En Revisión';
       case 'incomplete': return 'Incompleto';
-      case 'verified': return 'Verificado';
+      case 'verified': return 'Aprobado';
       case 'sent-to-insurer': return 'Enviado a Aseguradora';
       case 'finalized': return 'Finalizado';
       default: return 'Desconocido';
@@ -54,8 +56,8 @@ const ClaimCard = ({ claim, isAdmin = false }) => {
     }
   };
 
-  // Extract just the number part from claim ID
-  const claimNumber = claim.id?.replace('claim-', '');
+  // Extract just the number part from claim ID and convert to uppercase
+  const claimNumber = claim.id?.replace('claim-', '').toUpperCase();
 
   const formatDateTime = (dateString) => {
     if (!dateString) return '';
@@ -74,7 +76,7 @@ const ClaimCard = ({ claim, isAdmin = false }) => {
           <SafeIcon icon={FiFileText} className="w-8 h-8 text-fortex-primary" />
           <div>
             <h3 className="text-lg font-semibold text-gray-900">
-              Reclamo-{claimNumber}
+              R-{claimNumber}
             </h3>
             <p className="text-sm text-gray-600">
               {claim.tipoSiniestro} - {claim.tipoReclamo}

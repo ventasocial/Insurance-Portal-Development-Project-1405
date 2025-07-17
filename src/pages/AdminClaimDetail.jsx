@@ -22,6 +22,7 @@ const AdminClaimDetail = () => {
   const [loading, setLoading] = useState(false);
   const [sendingStatus, setSendingStatus] = useState(false);
   const [processingDocId, setProcessingDocId] = useState(null);
+  const [documentComments, setDocumentComments] = useState({});
 
   useEffect(() => {
     const currentClaim = claims.find(c => c.id === claimId);
@@ -35,6 +36,13 @@ const AdminClaimDetail = () => {
     try {
       const docs = await claimsService.getClaimDocuments(id);
       setDocuments(docs);
+      
+      // Initialize comments state from loaded documents
+      const initialComments = {};
+      Object.entries(docs).forEach(([docType, docInfo]) => {
+        initialComments[docType] = docInfo.comments || '';
+      });
+      setDocumentComments(initialComments);
     } catch (error) {
       console.error('Error loading documents:', error);
     }
@@ -47,7 +55,7 @@ const AdminClaimDetail = () => {
       await ghlService.triggerAutomation(claim.contactId, 'send_status_update', {
         claimId: claim.id,
         status: claim.status,
-        claimNumber: claim.id?.replace('claim-', ''),
+        claimNumber: claim.id?.replace('claim-', '').toUpperCase(),
         customerName: claim.nombreAsegurado
       });
       
@@ -75,12 +83,40 @@ const AdminClaimDetail = () => {
     }
   };
 
+  const handleCommentChange = (documentType, value) => {
+    setDocumentComments(prev => ({
+      ...prev,
+      [documentType]: value
+    }));
+  };
+
   const handleDocumentStatus = async (documentType, status) => {
     setProcessingDocId(documentType);
+    const comments = documentComments[documentType] || '';
+    
+    // If no comments and trying to approve or reject, set to pending
+    const finalStatus = (comments.trim() === '' && (status === 'approved' || status === 'rejected')) 
+      ? 'pending' 
+      : status;
+    
     try {
-      await claimsService.updateDocumentStatus(claimId, documentType, status);
+      await claimsService.updateDocumentStatus(claimId, documentType, finalStatus, comments);
       await loadDocuments(claimId);
-      toast.success(`Documento ${status === 'approved' ? 'aprobado' : 'rechazado'} correctamente`);
+      
+      // Check if all documents are now approved to update claim status
+      if (status === 'approved') {
+        const updatedDocs = await claimsService.getClaimDocuments(claimId);
+        const allDocsApproved = Object.values(updatedDocs).every(
+          doc => doc.status === 'approved'
+        );
+        
+        if (allDocsApproved && Object.keys(updatedDocs).length > 0) {
+          await updateClaimStatus(claimId, 'verified');
+          toast.success('Todos los documentos aprobados. Reclamo verificado.');
+        }
+      }
+      
+      toast.success(`Documento ${finalStatus === 'approved' ? 'aprobado' : (finalStatus === 'rejected' ? 'rechazado' : 'pendiente')} correctamente`);
     } catch (error) {
       toast.error('Error al actualizar el estado del documento');
       console.error('Document status update error:', error);
@@ -129,6 +165,15 @@ const AdminClaimDetail = () => {
     }
   };
 
+  const handleDownloadFile = (fileUrl, fileName) => {
+    const link = document.createElement('a');
+    link.href = fileUrl;
+    link.download = fileName;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+
   if (!claim) {
     return (
       <div className="min-h-screen bg-gray-50">
@@ -142,7 +187,7 @@ const AdminClaimDetail = () => {
     );
   }
 
-  const claimNumber = claim.id?.replace('claim-', '');
+  const claimNumber = claim.id?.replace('claim-', '').toUpperCase();
   const isInInsurer = claim.status === 'sent-to-insurer';
 
   return (
@@ -165,7 +210,7 @@ const AdminClaimDetail = () => {
             <div className="flex items-center justify-between">
               <div>
                 <h2 className="text-3xl font-bold text-gray-900 mb-2">
-                  Reclamo-{claimNumber}
+                  R-{claimNumber}
                 </h2>
                 <p className="text-gray-600">
                   Detalles del reclamo administrativo
@@ -338,6 +383,9 @@ const AdminClaimDetail = () => {
                           Archivos
                         </th>
                         <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                          Comentarios para el Asegurado
+                        </th>
+                        <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                           Acciones
                         </th>
                       </tr>
@@ -366,15 +414,33 @@ const AdminClaimDetail = () => {
                                   >
                                     {file.name}
                                   </a>
-                                  <SafeIcon icon={FiDownload} className="w-4 h-4 text-gray-400 hover:text-gray-600 cursor-pointer" />
+                                  <button
+                                    onClick={() => handleDownloadFile(file.url, file.name)}
+                                    className="text-gray-400 hover:text-gray-600 cursor-pointer"
+                                  >
+                                    <SafeIcon icon={FiDownload} className="w-4 h-4" />
+                                  </button>
                                 </div>
                               ))}
+                            </div>
+                          </td>
+                          <td className="px-6 py-4">
+                            <textarea
+                              value={documentComments[docType] || ''}
+                              onChange={(e) => handleCommentChange(docType, e.target.value)}
+                              placeholder="Comentarios para el asegurado..."
+                              className="w-full px-2 py-1 text-sm border border-gray-300 rounded focus:ring-2 focus:ring-fortex-primary focus:border-transparent"
+                              rows={2}
+                            />
+                            <div className="text-xs text-gray-500 mt-1">
+                              {documentComments[docType]?.trim() === '' && 
+                                'El documento quedará como "Pendiente" sin comentarios'}
                             </div>
                           </td>
                           <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium space-x-2">
                             <button
                               onClick={() => handleDocumentStatus(docType, 'approved')}
-                              disabled={processingDocId === docType || docInfo.status === 'approved'}
+                              disabled={processingDocId === docType}
                               className={`inline-flex items-center px-3 py-1 rounded-md text-sm transition-colors ${
                                 docInfo.status === 'approved'
                                   ? 'bg-green-100 text-green-700'
@@ -382,11 +448,11 @@ const AdminClaimDetail = () => {
                               }`}
                             >
                               <SafeIcon icon={FiCheckCircle} className="w-4 h-4 mr-1" />
-                              Aceptado
+                              Aprobado
                             </button>
                             <button
                               onClick={() => handleDocumentStatus(docType, 'rejected')}
-                              disabled={processingDocId === docType || docInfo.status === 'rejected'}
+                              disabled={processingDocId === docType}
                               className={`inline-flex items-center px-3 py-1 rounded-md text-sm transition-colors ${
                                 docInfo.status === 'rejected'
                                   ? 'bg-red-100 text-red-700'

@@ -8,7 +8,7 @@ const generateClaimCode = () => {
   for (let i = 0; i < 4; i++) {
     result += characters.charAt(Math.floor(Math.random() * characters.length));
   }
-  return result;
+  return result.toUpperCase();
 };
 
 // Track used claim codes to avoid duplicates
@@ -151,6 +151,48 @@ const allMockClaims = [
     updatedAt: '2024-01-17T16:00:00Z',
     lastEditedBy: 'Roberto Torres',
     documentsCount: 6
+  },
+  {
+    id: 'claim-yzab',
+    contactId: 'contact-303',
+    firstName: 'Rodrigo',
+    lastName: 'Sánchez',
+    email: 'rodrigo.sanchez@email.com',
+    phone: '+52 55 2222 3333',
+    nombreAsegurado: 'Rodrigo Sánchez Flores',
+    emailAsegurado: 'rodrigo.sanchez@email.com',
+    numeroPoliza: 'POL-222333',
+    digitoVerificador: '4',
+    relacionAsegurado: 'titular',
+    tipoSiniestro: 'enfermedad',
+    tipoReclamo: 'reembolso',
+    aseguradora: 'GNP',
+    status: 'archived',
+    createdAt: '2023-12-15T08:30:00Z',
+    updatedAt: '2024-01-10T16:45:00Z', // 26 days for processing
+    lastEditedBy: 'Laura Torres',
+    documentsCount: 5
+  },
+  {
+    id: 'claim-cdef',
+    contactId: 'contact-404',
+    firstName: 'Gabriela',
+    lastName: 'López',
+    email: 'gabriela.lopez@email.com',
+    phone: '+52 55 4444 5555',
+    nombreAsegurado: 'Gabriela López Mendoza',
+    emailAsegurado: 'gabriela.lopez@email.com',
+    numeroPoliza: 'POL-444555',
+    digitoVerificador: '8',
+    relacionAsegurado: 'titular',
+    tipoSiniestro: 'accidente',
+    tipoReclamo: 'carta-garantia',
+    aseguradora: 'AXA',
+    status: 'archived',
+    createdAt: '2023-12-20T11:15:00Z',
+    updatedAt: '2024-01-05T09:30:00Z', // 16 days for processing
+    lastEditedBy: 'Carlos Gómez',
+    documentsCount: 7
   }
 ];
 
@@ -209,7 +251,7 @@ const mockDocuments = {
       ]
     },
     identificacionOficial: {
-      status: 'under-review',
+      status: 'approved',
       files: [
         { name: 'ine_frente_reverso.pdf', url: '#', uploadedAt: '2024-01-11T09:30:00Z' }
       ]
@@ -225,7 +267,15 @@ const generateClaimId = () => {
   } while (usedClaimCodes.has(claimCode));
   
   usedClaimCodes.add(claimCode);
-  return 'claim-' + claimCode;
+  return 'claim-' + claimCode.toLowerCase();
+};
+
+// Helper function to check if all documents are approved
+const checkAllDocumentsApproved = (claimId) => {
+  const docs = mockDocuments[claimId];
+  if (!docs || Object.keys(docs).length === 0) return false;
+  
+  return Object.values(docs).every(doc => doc.status === 'approved');
 };
 
 export const claimsService = {
@@ -244,7 +294,7 @@ export const claimsService = {
     return new Promise((resolve) => {
       setTimeout(() => {
         // Filter out archived claims for the main view
-        const activeClaims = allMockClaims.filter(claim => claim.status !== 'archived');
+        const activeClaims = allMockClaims;
         resolve(activeClaims);
       }, 1000);
     });
@@ -412,6 +462,19 @@ export const claimsService = {
           if (claimIndex !== -1) {
             allMockClaims[claimIndex].lastEditedBy = 'Operador (Revisión de documento)';
             allMockClaims[claimIndex].updatedAt = new Date().toISOString();
+            
+            // Check if all documents are now approved to update claim status
+            if (status === 'approved' && checkAllDocumentsApproved(claimId)) {
+              allMockClaims[claimIndex].status = 'verified';
+              
+              // Also update in mockClaims if it exists there
+              const userClaimIndex = mockClaims.findIndex(c => c.id === claimId);
+              if (userClaimIndex !== -1) {
+                mockClaims[userClaimIndex].status = 'verified';
+                mockClaims[userClaimIndex].updatedAt = new Date().toISOString();
+                mockClaims[userClaimIndex].lastEditedBy = 'Sistema (Todos los documentos aprobados)';
+              }
+            }
           }
         }
         resolve({ success: true });
