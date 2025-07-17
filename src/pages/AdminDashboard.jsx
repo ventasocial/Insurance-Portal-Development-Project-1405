@@ -69,7 +69,7 @@ const AdminDashboard = () => {
         >
           <div className="mb-8">
             <h2 className="text-3xl font-bold text-gray-900 mb-2">
-              Panel Administrativo
+              Panel Operativo
             </h2>
             <p className="text-gray-600">
               Gestiona todos los reclamos de seguros
@@ -134,7 +134,7 @@ const AdminDashboard = () => {
           {/* Kanban Board */}
           <div className="overflow-x-auto">
             <DragDropContext onDragEnd={onDragEnd}>
-              <div className="flex gap-6" style={{ minWidth: `${columns.length * 350}px` }}>
+              <div className="flex justify-center gap-6" style={{ minWidth: `${columns.length * 350}px` }}>
                 {columns.map((column) => (
                   <div key={column.id} className="bg-gray-100 rounded-lg p-4" style={{ minWidth: '350px', flex: '0 0 350px' }}>
                     <h3 className="font-semibold text-gray-900 mb-4 text-center">

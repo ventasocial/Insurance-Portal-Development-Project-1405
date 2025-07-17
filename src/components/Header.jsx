@@ -1,15 +1,28 @@
 import React, { useState } from 'react';
 import { motion } from 'framer-motion';
 import { useAuth } from '../contexts/AuthContext';
+import { useNavigate, useLocation } from 'react-router-dom';
 import UserProfile from './UserProfile';
 import * as FiIcons from 'react-icons/fi';
 import SafeIcon from '../common/SafeIcon';
 
-const { FiLogOut, FiUser, FiEdit3 } = FiIcons;
+const { FiLogOut, FiUser, FiEdit3, FiRefreshCw, FiUsers } = FiIcons;
 
 const Header = () => {
   const { user, logout, isAdmin } = useAuth();
   const [showProfile, setShowProfile] = useState(false);
+  const navigate = useNavigate();
+  const location = useLocation();
+  
+  const isAdminRoute = location.pathname.startsWith('/admin');
+  
+  const handleViewToggle = () => {
+    if (isAdminRoute) {
+      navigate('/dashboard');
+    } else {
+      navigate('/admin/dashboard');
+    }
+  };
 
   return (
     <>
@@ -28,16 +41,27 @@ const Header = () => {
                 className="h-10 w-auto"
               />
               <h1 className="text-xl font-semibold text-fortex-primary">
-                {isAdmin ? 'Panel Administrativo' : 'Portal de Clientes'}
+                {isAdminRoute ? 'Panel Operativo' : 'Portal de Clientes'}
               </h1>
             </div>
             <div className="flex items-center space-x-4">
+              {isAdmin && (
+                <button
+                  onClick={handleViewToggle}
+                  className="flex items-center space-x-2 px-3 py-2 text-sm text-gray-700 hover:text-fortex-primary transition-colors border border-gray-300 rounded-lg hover:bg-gray-50"
+                >
+                  <SafeIcon icon={isAdminRoute ? FiUsers : FiRefreshCw} className="w-4 h-4" />
+                  <span>
+                    {isAdminRoute ? 'Ver Portal Cliente' : 'Ver Panel Operativo'}
+                  </span>
+                </button>
+              )}
               <div className="flex items-center space-x-2 text-gray-700">
                 <SafeIcon icon={FiUser} className="w-5 h-5" />
                 <span className="text-sm font-medium">
                   {user?.firstName || user?.email}
                 </span>
-                {!isAdmin && (
+                {!isAdminRoute && (
                   <button
                     onClick={() => setShowProfile(true)}
                     className="p-1 text-gray-400 hover:text-fortex-primary transition-colors"

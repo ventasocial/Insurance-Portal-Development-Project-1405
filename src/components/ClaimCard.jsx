@@ -3,8 +3,10 @@ import { motion } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
 import * as FiIcons from 'react-icons/fi';
 import SafeIcon from '../common/SafeIcon';
+import { format } from 'date-fns';
+import { es } from 'date-fns/locale';
 
-const { FiFileText, FiClock, FiCheckCircle, FiXCircle, FiArrowRight } = FiIcons;
+const { FiFileText, FiClock, FiCheckCircle, FiXCircle, FiArrowRight, FiUser } = FiIcons;
 
 const ClaimCard = ({ claim, isAdmin = false }) => {
   const navigate = useNavigate();
@@ -55,6 +57,12 @@ const ClaimCard = ({ claim, isAdmin = false }) => {
   // Extract just the number part from claim ID
   const claimNumber = claim.id?.replace('claim-', '');
 
+  const formatDateTime = (dateString) => {
+    if (!dateString) return '';
+    const date = new Date(dateString);
+    return format(date, "d 'de' MMMM, yyyy HH:mm", { locale: es });
+  };
+
   return (
     <motion.div
       className="bg-white rounded-lg shadow-md p-6 cursor-pointer hover:shadow-lg transition-shadow"
@@ -96,6 +104,26 @@ const ClaimCard = ({ claim, isAdmin = false }) => {
           <span className="text-gray-600">Fecha:</span>
           <span className="font-medium">{new Date(claim.createdAt).toLocaleDateString()}</span>
         </div>
+        
+        {isAdmin && (
+          <div className="flex justify-between text-sm text-gray-500 pt-2 border-t border-gray-100 mt-2">
+            <div className="flex items-center">
+              <SafeIcon icon={FiClock} className="w-3 h-3 mr-1" />
+              <span>Última edición:</span>
+            </div>
+            <span>{formatDateTime(claim.updatedAt)}</span>
+          </div>
+        )}
+        
+        {isAdmin && claim.lastEditedBy && (
+          <div className="flex justify-between text-sm text-gray-500">
+            <div className="flex items-center">
+              <SafeIcon icon={FiUser} className="w-3 h-3 mr-1" />
+              <span>Editado por:</span>
+            </div>
+            <span>{claim.lastEditedBy}</span>
+          </div>
+        )}
       </div>
 
       <div className="flex items-center justify-between pt-4 border-t border-gray-200">

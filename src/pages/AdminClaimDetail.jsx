@@ -8,23 +8,37 @@ import { ghlService } from '../services/ghlService';
 import * as FiIcons from 'react-icons/fi';
 import SafeIcon from '../common/SafeIcon';
 import toast from 'react-hot-toast';
+import { format } from 'date-fns';
+import { es } from 'date-fns/locale';
 
-const { FiArrowLeft, FiSend, FiArchive, FiUser, FiMail, FiPhone, FiFileText, FiCalendar } = FiIcons;
+const { FiArrowLeft, FiSend, FiArchive, FiUser, FiMail, FiPhone, FiFileText, FiCalendar, FiCheckCircle, FiXCircle, FiDownload, FiClock } = FiIcons;
 
 const AdminClaimDetail = () => {
   const { claimId } = useParams();
   const navigate = useNavigate();
   const { claims, updateClaimStatus } = useClaims();
   const [claim, setClaim] = useState(null);
+  const [documents, setDocuments] = useState({});
   const [loading, setLoading] = useState(false);
   const [sendingStatus, setSendingStatus] = useState(false);
+  const [processingDocId, setProcessingDocId] = useState(null);
 
   useEffect(() => {
     const currentClaim = claims.find(c => c.id === claimId);
     if (currentClaim) {
       setClaim(currentClaim);
+      loadDocuments(currentClaim.id);
     }
   }, [claimId, claims]);
+
+  const loadDocuments = async (id) => {
+    try {
+      const docs = await claimsService.getClaimDocuments(id);
+      setDocuments(docs);
+    } catch (error) {
+      console.error('Error loading documents:', error);
+    }
+  };
 
   const handleSendStatus = async () => {
     setSendingStatus(true);
@@ -58,6 +72,60 @@ const AdminClaimDetail = () => {
       console.error('Archive error:', error);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleDocumentStatus = async (documentType, status) => {
+    setProcessingDocId(documentType);
+    try {
+      await claimsService.updateDocumentStatus(claimId, documentType, status);
+      await loadDocuments(claimId);
+      toast.success(`Documento ${status === 'approved' ? 'aprobado' : 'rechazado'} correctamente`);
+    } catch (error) {
+      toast.error('Error al actualizar el estado del documento');
+      console.error('Document status update error:', error);
+    } finally {
+      setProcessingDocId(null);
+    }
+  };
+
+  const formatDateTime = (dateString) => {
+    if (!dateString) return '';
+    const date = new Date(dateString);
+    return format(date, "d 'de' MMMM, yyyy HH:mm", { locale: es });
+  };
+
+  const getDocumentTypeLabel = (key) => {
+    const documentTypes = {
+      'avisoAccidente': 'Aviso de Accidente/Enfermedad',
+      'informeMedico': 'Informe Médico',
+      'formatoReembolso': 'Formato de Reembolso',
+      'recetasMedicas': 'Recetas Médicas',
+      'estudiosLaboratorio': 'Estudios de Laboratorio',
+      'documentosBancarios': 'Documentos Bancarios',
+      'identificacionOficial': 'Identificación Oficial',
+      'facturas': 'Facturas',
+    };
+    return documentTypes[key] || key;
+  };
+
+  const getStatusColor = (status) => {
+    switch (status) {
+      case 'pending': return 'text-yellow-600 bg-yellow-100';
+      case 'approved': return 'text-green-600 bg-green-100';
+      case 'rejected': return 'text-red-600 bg-red-100';
+      case 'under-review': return 'text-blue-600 bg-blue-100';
+      default: return 'text-gray-600 bg-gray-100';
+    }
+  };
+
+  const getStatusText = (status) => {
+    switch (status) {
+      case 'pending': return 'Pendiente';
+      case 'approved': return 'Aprobado';
+      case 'rejected': return 'Rechazado';
+      case 'under-review': return 'En Revisión';
+      default: return 'Desconocido';
     }
   };
 
@@ -102,6 +170,10 @@ const AdminClaimDetail = () => {
                 <p className="text-gray-600">
                   Detalles del reclamo administrativo
                 </p>
+                <div className="text-sm text-gray-500 mt-1 flex items-center">
+                  <SafeIcon icon={FiClock} className="w-3 h-3 mr-1" />
+                  <span>Última edición: {formatDateTime(claim.updatedAt)} por {claim.lastEditedBy || 'Usuario del sistema'}</span>
+                </div>
               </div>
               <button
                 onClick={isInInsurer ? handleArchiveClaim : handleSendStatus}
@@ -182,13 +254,7 @@ const AdminClaimDetail = () => {
                     Fecha de Creación
                   </label>
                   <p className="text-sm text-gray-900 bg-gray-50 px-3 py-2 rounded">
-                    {new Date(claim.createdAt).toLocaleDateString('es-ES', {
-                      year: 'numeric',
-                      month: 'long',
-                      day: 'numeric',
-                      hour: '2-digit',
-                      minute: '2-digit'
-                    })}
+                    {formatDateTime(claim.createdAt)}
                   </p>
                 </div>
               </div>
@@ -257,11 +323,93 @@ const AdminClaimDetail = () => {
               </h3>
             </div>
             <div className="p-6">
-              <div className="text-center py-8 text-gray-500">
-                <SafeIcon icon={FiFileText} className="w-12 h-12 mx-auto mb-2" />
-                <p>Los documentos se mostrarán aquí</p>
-                <p className="text-sm">Documentos subidos: {claim.documentsCount || 0}</p>
-              </div>
+              {Object.keys(documents).length > 0 ? (
+                <div className="overflow-x-auto">
+                  <table className="min-w-full divide-y divide-gray-200">
+                    <thead className="bg-gray-50">
+                      <tr>
+                        <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                          Tipo de Documento
+                        </th>
+                        <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                          Estado
+                        </th>
+                        <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                          Archivos
+                        </th>
+                        <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                          Acciones
+                        </th>
+                      </tr>
+                    </thead>
+                    <tbody className="bg-white divide-y divide-gray-200">
+                      {Object.entries(documents).map(([docType, docInfo]) => (
+                        <tr key={docType}>
+                          <td className="px-6 py-4 whitespace-nowrap">
+                            <div className="text-sm font-medium text-gray-900">{getDocumentTypeLabel(docType)}</div>
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap">
+                            <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${getStatusColor(docInfo.status)}`}>
+                              {getStatusText(docInfo.status)}
+                            </span>
+                          </td>
+                          <td className="px-6 py-4">
+                            <div className="space-y-2">
+                              {docInfo.files && docInfo.files.map((file, idx) => (
+                                <div key={idx} className="flex items-center space-x-2 text-sm">
+                                  <SafeIcon icon={FiFileText} className="w-4 h-4 text-gray-500" />
+                                  <a 
+                                    href={file.url} 
+                                    target="_blank" 
+                                    rel="noreferrer"
+                                    className="text-fortex-primary hover:text-fortex-secondary truncate max-w-xs"
+                                  >
+                                    {file.name}
+                                  </a>
+                                  <SafeIcon icon={FiDownload} className="w-4 h-4 text-gray-400 hover:text-gray-600 cursor-pointer" />
+                                </div>
+                              ))}
+                            </div>
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium space-x-2">
+                            <button
+                              onClick={() => handleDocumentStatus(docType, 'approved')}
+                              disabled={processingDocId === docType || docInfo.status === 'approved'}
+                              className={`inline-flex items-center px-3 py-1 rounded-md text-sm transition-colors ${
+                                docInfo.status === 'approved'
+                                  ? 'bg-green-100 text-green-700'
+                                  : 'bg-gray-100 text-gray-700 hover:bg-green-100 hover:text-green-700'
+                              }`}
+                            >
+                              <SafeIcon icon={FiCheckCircle} className="w-4 h-4 mr-1" />
+                              Aceptado
+                            </button>
+                            <button
+                              onClick={() => handleDocumentStatus(docType, 'rejected')}
+                              disabled={processingDocId === docType || docInfo.status === 'rejected'}
+                              className={`inline-flex items-center px-3 py-1 rounded-md text-sm transition-colors ${
+                                docInfo.status === 'rejected'
+                                  ? 'bg-red-100 text-red-700'
+                                  : 'bg-gray-100 text-gray-700 hover:bg-red-100 hover:text-red-700'
+                              }`}
+                              style={docInfo.status === 'rejected' ? { backgroundColor: '#fee2e2', color: '#b91c1c' } : {}}
+                            >
+                              <SafeIcon icon={FiXCircle} className="w-4 h-4 mr-1" />
+                              Rechazado
+                            </button>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              ) : (
+                <div className="text-center py-8 text-gray-500">
+                  <SafeIcon icon={FiFileText} className="w-12 h-12 mx-auto mb-2" />
+                  <p>No hay documentos subidos para este reclamo</p>
+                  <p className="text-sm">Documentos subidos: {claim.documentsCount || 0}</p>
+                </div>
+              )}
             </div>
           </div>
         </motion.div>

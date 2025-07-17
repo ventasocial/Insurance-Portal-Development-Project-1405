@@ -1,9 +1,22 @@
 // Mock claims service
 // In production, this would connect to GoHighLevel API
 
+// Generate a random 4-character alphanumeric string
+const generateClaimCode = () => {
+  const characters = 'abcdefghijklmnopqrstuvwxyz0123456789';
+  let result = '';
+  for (let i = 0; i < 4; i++) {
+    result += characters.charAt(Math.floor(Math.random() * characters.length));
+  }
+  return result;
+};
+
+// Track used claim codes to avoid duplicates
+const usedClaimCodes = new Set();
+
 const mockClaims = [
   {
-    id: 'claim-001',
+    id: 'claim-abcd',
     contactId: 'demo-contact-456',
     firstName: 'Juan',
     lastName: 'Pérez',
@@ -20,10 +33,11 @@ const mockClaims = [
     status: 'pending',
     createdAt: '2024-01-15T10:30:00Z',
     updatedAt: '2024-01-15T10:30:00Z',
+    lastEditedBy: 'Administrador',
     documentsCount: 3
   },
   {
-    id: 'claim-002',
+    id: 'claim-efgh',
     contactId: 'demo-contact-456',
     firstName: 'Juan',
     lastName: 'Pérez',
@@ -40,10 +54,11 @@ const mockClaims = [
     status: 'verified',
     createdAt: '2024-01-10T14:20:00Z',
     updatedAt: '2024-01-12T09:15:00Z',
+    lastEditedBy: 'Carlos Rodríguez',
     documentsCount: 5
   },
   {
-    id: 'claim-003',
+    id: 'claim-ijkl',
     contactId: 'demo-contact-456',
     firstName: 'Juan',
     lastName: 'Pérez',
@@ -60,15 +75,22 @@ const mockClaims = [
     status: 'sent-to-insurer',
     createdAt: '2024-01-08T16:45:00Z',
     updatedAt: '2024-01-14T11:30:00Z',
+    lastEditedBy: 'Laura Sánchez',
     documentsCount: 7
   }
 ];
+
+// Initialize used claim codes from existing claims
+mockClaims.forEach(claim => {
+  const code = claim.id.replace('claim-', '');
+  usedClaimCodes.add(code);
+});
 
 // Mock admin claims (for admin panel)
 const allMockClaims = [
   ...mockClaims,
   {
-    id: 'claim-004',
+    id: 'claim-mnop',
     contactId: 'contact-789',
     firstName: 'Ana',
     lastName: 'González',
@@ -85,10 +107,11 @@ const allMockClaims = [
     status: 'pending',
     createdAt: '2024-01-12T09:15:00Z',
     updatedAt: '2024-01-13T14:20:00Z',
+    lastEditedBy: 'Miguel Ángel',
     documentsCount: 2
   },
   {
-    id: 'claim-005',
+    id: 'claim-qrst',
     contactId: 'contact-101',
     firstName: 'Luis',
     lastName: 'Martínez',
@@ -105,10 +128,11 @@ const allMockClaims = [
     status: 'verified',
     createdAt: '2024-01-05T11:30:00Z',
     updatedAt: '2024-01-16T08:45:00Z',
+    lastEditedBy: 'Patricia Gómez',
     documentsCount: 8
   },
   {
-    id: 'claim-006',
+    id: 'claim-uvwx',
     contactId: 'contact-202',
     firstName: 'Carmen',
     lastName: 'Jiménez',
@@ -125,12 +149,19 @@ const allMockClaims = [
     status: 'sent-to-insurer',
     createdAt: '2024-01-01T13:45:00Z',
     updatedAt: '2024-01-17T16:00:00Z',
+    lastEditedBy: 'Roberto Torres',
     documentsCount: 6
   }
 ];
 
+// Add all claim codes to the set
+allMockClaims.forEach(claim => {
+  const code = claim.id.replace('claim-', '');
+  usedClaimCodes.add(code);
+});
+
 const mockDocuments = {
-  'claim-001': {
+  'claim-abcd': {
     avisoAccidente: {
       status: 'approved',
       files: [
@@ -149,9 +180,22 @@ const mockDocuments = {
       files: [
         { name: 'formato_reembolso.pdf', url: '#', uploadedAt: '2024-01-15T11:15:00Z' }
       ]
+    },
+    identificacionOficial: {
+      status: 'pending',
+      files: [
+        { name: 'ine_frente.pdf', url: '#', uploadedAt: '2024-01-15T11:20:00Z' }
+      ]
+    },
+    facturas: {
+      status: 'approved',
+      files: [
+        { name: 'factura_hospital.pdf', url: '#', uploadedAt: '2024-01-15T11:25:00Z' },
+        { name: 'factura_medicamentos.pdf', url: '#', uploadedAt: '2024-01-15T11:30:00Z' }
+      ]
     }
   },
-  'claim-002': {
+  'claim-efgh': {
     avisoAccidente: {
       status: 'approved',
       files: [
@@ -175,7 +219,13 @@ const mockDocuments = {
 
 // Helper function to generate unique ID
 const generateClaimId = () => {
-  return 'claim-' + Math.random().toString(36).substr(2, 9);
+  let claimCode;
+  do {
+    claimCode = generateClaimCode();
+  } while (usedClaimCodes.has(claimCode));
+  
+  usedClaimCodes.add(claimCode);
+  return 'claim-' + claimCode;
 };
 
 export const claimsService = {
@@ -225,6 +275,7 @@ export const claimsService = {
           status: 'pending',
           createdAt: new Date().toISOString(),
           updatedAt: new Date().toISOString(),
+          lastEditedBy: 'Sistema (Creación)',
           documentsCount: 0
         };
 
@@ -249,7 +300,8 @@ export const claimsService = {
           allMockClaims[claimIndex] = {
             ...allMockClaims[claimIndex],
             ...updateData,
-            updatedAt: new Date().toISOString()
+            updatedAt: new Date().toISOString(),
+            lastEditedBy: updateData.lastEditedBy || 'Usuario del sistema'
           };
           
           // Also update in mockClaims if it exists there
@@ -258,7 +310,8 @@ export const claimsService = {
             mockClaims[userClaimIndex] = {
               ...mockClaims[userClaimIndex],
               ...updateData,
-              updatedAt: new Date().toISOString()
+              updatedAt: new Date().toISOString(),
+              lastEditedBy: updateData.lastEditedBy || 'Usuario del sistema'
             };
           }
         }
@@ -277,6 +330,7 @@ export const claimsService = {
         if (claimIndex !== -1) {
           allMockClaims[claimIndex].status = status;
           allMockClaims[claimIndex].updatedAt = new Date().toISOString();
+          allMockClaims[claimIndex].lastEditedBy = 'Operador (Cambio de estado)';
           if (comments) {
             allMockClaims[claimIndex].comments = comments;
           }
@@ -287,6 +341,7 @@ export const claimsService = {
         if (userClaimIndex !== -1) {
           mockClaims[userClaimIndex].status = status;
           mockClaims[userClaimIndex].updatedAt = new Date().toISOString();
+          mockClaims[userClaimIndex].lastEditedBy = 'Operador (Cambio de estado)';
           if (comments) {
             mockClaims[userClaimIndex].comments = comments;
           }
@@ -326,6 +381,16 @@ export const claimsService = {
           uploadedAt: new Date().toISOString()
         });
         mockDocuments[claimId][documentType].status = 'under-review';
+        
+        // Update document count on the claim
+        const claimIndex = allMockClaims.findIndex(c => c.id === claimId);
+        if (claimIndex !== -1) {
+          const currentCount = allMockClaims[claimIndex].documentsCount || 0;
+          allMockClaims[claimIndex].documentsCount = currentCount + 1;
+          allMockClaims[claimIndex].lastEditedBy = 'Cliente (Subida de documento)';
+          allMockClaims[claimIndex].updatedAt = new Date().toISOString();
+        }
+        
         resolve({ success: true });
       }, 2000);
     });
@@ -340,6 +405,13 @@ export const claimsService = {
           mockDocuments[claimId][documentType].status = status;
           if (comments) {
             mockDocuments[claimId][documentType].comments = comments;
+          }
+          
+          // Update the claim's last edited information
+          const claimIndex = allMockClaims.findIndex(c => c.id === claimId);
+          if (claimIndex !== -1) {
+            allMockClaims[claimIndex].lastEditedBy = 'Operador (Revisión de documento)';
+            allMockClaims[claimIndex].updatedAt = new Date().toISOString();
           }
         }
         resolve({ success: true });

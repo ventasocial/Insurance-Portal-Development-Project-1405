@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import * as FiIcons from 'react-icons/fi';
 import SafeIcon from '../common/SafeIcon';
@@ -33,8 +33,31 @@ const NewClaimModal = ({ isOpen, onClose, onClaimCreated }) => {
     fechaSiniestro: ''
   });
 
+  useEffect(() => {
+    // Update user data if it changes
+    if (user) {
+      setFormData(prev => ({
+        ...prev,
+        firstName: user.firstName || prev.firstName,
+        lastName: user.lastName || prev.lastName,
+        email: user.email || prev.email,
+        phone: user.phone || prev.phone,
+      }));
+    }
+  }, [user]);
+
   const handleInputChange = (field, value) => {
-    setFormData(prev => ({ ...prev, [field]: value }));
+    setFormData(prev => {
+      const updatedData = { ...prev, [field]: value };
+      
+      // Auto-fill nombreAsegurado when relationship is "titular"
+      if (field === 'relacionAsegurado' && value === 'titular') {
+        updatedData.nombreAsegurado = `${prev.firstName} ${prev.lastName}`.trim();
+        updatedData.emailAsegurado = prev.email;
+      }
+      
+      return updatedData;
+    });
   };
 
   const handleSubmit = async (e) => {
