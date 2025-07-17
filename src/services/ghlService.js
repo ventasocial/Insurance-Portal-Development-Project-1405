@@ -85,6 +85,15 @@ class GHLService {
     return this.updateOpportunity(opportunityId, { pipelineStageId: stageId });
   }
 
+  // Automation Trigger
+  async triggerAutomation(contactId, automationId, data = {}) {
+    // Trigger a specific automation in GoHighLevel
+    return this.makeRequest(`/contacts/${contactId}/workflow/${automationId}/subscribe`, {
+      method: 'POST',
+      body: JSON.stringify(data)
+    });
+  }
+
   // File Upload Methods
   async uploadFile(file, folderId = null) {
     const formData = new FormData();
@@ -207,10 +216,8 @@ class GHLService {
     // This mapping would be configured based on your GHL pipeline setup
     const stageMapping = {
       'stage-1': 'pending',         // Documentación Recibida
-      'stage-2': 'incomplete',      // Documentación Incompleta
-      'stage-3': 'verified',        // Documentación Verificada
-      'stage-4': 'sent-to-insurer', // Enviado a la Aseguradora
-      'stage-5': 'finalized'        // Reclamo Finalizado
+      'stage-2': 'verified',        // Documentación Verificada
+      'stage-3': 'sent-to-insurer'  // Enviado a Aseguradora
     };
     return stageMapping[stageId] || 'pending';
   }
@@ -218,10 +225,8 @@ class GHLService {
   mapStatusToPipelineStage(status) {
     const statusMapping = {
       'pending': 'stage-1',
-      'incomplete': 'stage-2',
-      'verified': 'stage-3',
-      'sent-to-insurer': 'stage-4',
-      'finalized': 'stage-5'
+      'verified': 'stage-2',
+      'sent-to-insurer': 'stage-3'
     };
     return statusMapping[status] || 'stage-1';
   }

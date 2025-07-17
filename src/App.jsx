@@ -10,6 +10,7 @@ import ClaimForm from './pages/ClaimForm';
 import DocumentUpload from './pages/DocumentUpload';
 import AdminDashboard from './pages/AdminDashboard';
 import AdminLogin from './pages/AdminLogin';
+import AdminClaimDetail from './pages/AdminClaimDetail';
 import './App.css';
 
 function App() {
@@ -21,37 +22,45 @@ function App() {
             <Routes>
               <Route path="/" element={<Login />} />
               <Route path="/admin" element={<AdminLogin />} />
-              <Route 
-                path="/dashboard" 
+              <Route
+                path="/dashboard"
                 element={
                   <ProtectedRoute>
                     <ClientDashboard />
                   </ProtectedRoute>
-                } 
+                }
               />
-              <Route 
-                path="/claim/:claimId" 
+              <Route
+                path="/claim/:claimId"
                 element={
                   <ProtectedRoute>
                     <ClaimForm />
                   </ProtectedRoute>
-                } 
+                }
               />
-              <Route 
-                path="/documents/:claimId" 
+              <Route
+                path="/documents/:claimId"
                 element={
                   <ProtectedRoute>
                     <DocumentUpload />
                   </ProtectedRoute>
-                } 
+                }
               />
-              <Route 
-                path="/admin/dashboard" 
+              <Route
+                path="/admin/dashboard"
                 element={
                   <ProtectedRoute admin>
                     <AdminDashboard />
                   </ProtectedRoute>
-                } 
+                }
+              />
+              <Route
+                path="/admin/claim/:claimId"
+                element={
+                  <ProtectedRoute admin>
+                    <AdminClaimDetail />
+                  </ProtectedRoute>
+                }
               />
             </Routes>
             <Toaster position="top-right" />

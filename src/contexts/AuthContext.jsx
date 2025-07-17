@@ -21,7 +21,7 @@ export const AuthProvider = ({ children }) => {
       try {
         const token = localStorage.getItem('fortex_token');
         const adminToken = localStorage.getItem('fortex_admin_token');
-        
+
         if (adminToken) {
           const adminUser = await authService.validateAdminToken(adminToken);
           if (adminUser) {
@@ -81,6 +81,11 @@ export const AuthProvider = ({ children }) => {
     return adminData;
   };
 
+  const updateUserProfile = (profileData) => {
+    setUser(prev => ({ ...prev, ...profileData }));
+    // In production, this would also update localStorage and send to backend
+  };
+
   const logout = () => {
     setUser(null);
     setIsAdmin(false);
@@ -95,6 +100,7 @@ export const AuthProvider = ({ children }) => {
     login,
     loginDemo,
     adminLogin,
+    updateUserProfile,
     logout
   };
 

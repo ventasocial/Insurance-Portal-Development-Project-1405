@@ -18,15 +18,14 @@ const AdminDashboard = () => {
 
   const columns = [
     { id: 'pending', title: 'Documentación Recibida', status: 'pending' },
-    { id: 'incomplete', title: 'Documentación Incompleta', status: 'incomplete' },
     { id: 'verified', title: 'Documentación Verificada', status: 'verified' },
-    { id: 'sent-to-insurer', title: 'Enviado a Aseguradora', status: 'sent-to-insurer' },
-    { id: 'finalized', title: 'Finalizado', status: 'finalized' }
+    { id: 'sent-to-insurer', title: 'Enviado a Aseguradora', status: 'sent-to-insurer' }
   ];
 
   const getClaimsByStatus = (status) => {
     return claims.filter(claim => 
       claim.status === status && 
+      claim.status !== 'archived' && // Don't show archived claims
       (searchTerm === '' || 
         claim.nombreAsegurado?.toLowerCase().includes(searchTerm.toLowerCase()) || 
         claim.email?.toLowerCase().includes(searchTerm.toLowerCase()) || 
@@ -56,8 +55,8 @@ const AdminDashboard = () => {
   }
 
   const filteredClaims = filterStatus === 'all' 
-    ? claims 
-    : claims.filter(claim => claim.status === filterStatus);
+    ? claims.filter(claim => claim.status !== 'archived')
+    : claims.filter(claim => claim.status === filterStatus && claim.status !== 'archived');
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -78,7 +77,7 @@ const AdminDashboard = () => {
           </div>
 
           {/* Stats Cards */}
-          <div className="grid grid-cols-1 md:grid-cols-5 gap-4 mb-8">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
             {columns.map((column) => (
               <motion.div
                 key={column.id}
@@ -133,42 +132,44 @@ const AdminDashboard = () => {
           </div>
 
           {/* Kanban Board */}
-          <DragDropContext onDragEnd={onDragEnd}>
-            <div className="grid grid-cols-1 lg:grid-cols-5 gap-6">
-              {columns.map((column) => (
-                <div key={column.id} className="bg-gray-100 rounded-lg p-4">
-                  <h3 className="font-semibold text-gray-900 mb-4 text-center">
-                    {column.title}
-                  </h3>
-                  <Droppable droppableId={column.status}>
-                    {(provided, snapshot) => (
-                      <div
-                        ref={provided.innerRef}
-                        {...provided.droppableProps}
-                        className={`min-h-96 space-y-3 ${snapshot.isDraggingOver ? 'bg-blue-50 border-2 border-blue-300 border-dashed' : ''}`}
-                      >
-                        {getClaimsByStatus(column.status).map((claim, index) => (
-                          <Draggable key={claim.id} draggableId={claim.id} index={index}>
-                            {(provided, snapshot) => (
-                              <div
-                                ref={provided.innerRef}
-                                {...provided.draggableProps}
-                                {...provided.dragHandleProps}
-                                className={`${snapshot.isDragging ? 'transform rotate-5 shadow-lg' : ''}`}
-                              >
-                                <ClaimCard claim={claim} isAdmin={true} />
-                              </div>
-                            )}
-                          </Draggable>
-                        ))}
-                        {provided.placeholder}
-                      </div>
-                    )}
-                  </Droppable>
-                </div>
-              ))}
-            </div>
-          </DragDropContext>
+          <div className="overflow-x-auto">
+            <DragDropContext onDragEnd={onDragEnd}>
+              <div className="flex gap-6" style={{ minWidth: `${columns.length * 350}px` }}>
+                {columns.map((column) => (
+                  <div key={column.id} className="bg-gray-100 rounded-lg p-4" style={{ minWidth: '350px', flex: '0 0 350px' }}>
+                    <h3 className="font-semibold text-gray-900 mb-4 text-center">
+                      {column.title}
+                    </h3>
+                    <Droppable droppableId={column.status}>
+                      {(provided, snapshot) => (
+                        <div
+                          ref={provided.innerRef}
+                          {...provided.droppableProps}
+                          className={`min-h-96 space-y-3 ${snapshot.isDraggingOver ? 'bg-blue-50 border-2 border-blue-300 border-dashed' : ''}`}
+                        >
+                          {getClaimsByStatus(column.status).map((claim, index) => (
+                            <Draggable key={claim.id} draggableId={claim.id} index={index}>
+                              {(provided, snapshot) => (
+                                <div
+                                  ref={provided.innerRef}
+                                  {...provided.draggableProps}
+                                  {...provided.dragHandleProps}
+                                  className={`${snapshot.isDragging ? 'transform rotate-5 shadow-lg' : ''}`}
+                                >
+                                  <ClaimCard claim={claim} isAdmin={true} />
+                                </div>
+                              )}
+                            </Draggable>
+                          ))}
+                          {provided.placeholder}
+                        </div>
+                      )}
+                    </Droppable>
+                  </div>
+                ))}
+              </div>
+            </DragDropContext>
+          </div>
         </motion.div>
       </main>
     </div>

@@ -37,7 +37,7 @@ const mockClaims = [
     tipoSiniestro: 'enfermedad',
     tipoReclamo: 'pago-directo',
     aseguradora: 'AXA',
-    status: 'under-review',
+    status: 'verified',
     createdAt: '2024-01-10T14:20:00Z',
     updatedAt: '2024-01-12T09:15:00Z',
     documentsCount: 5
@@ -57,7 +57,7 @@ const mockClaims = [
     tipoSiniestro: 'maternidad',
     tipoReclamo: 'carta-garantia',
     aseguradora: 'Qualitas',
-    status: 'verified',
+    status: 'sent-to-insurer',
     createdAt: '2024-01-08T16:45:00Z',
     updatedAt: '2024-01-14T11:30:00Z',
     documentsCount: 7
@@ -82,7 +82,7 @@ const allMockClaims = [
     tipoSiniestro: 'accidente',
     tipoReclamo: 'reembolso',
     aseguradora: 'GNP',
-    status: 'incomplete',
+    status: 'pending',
     createdAt: '2024-01-12T09:15:00Z',
     updatedAt: '2024-01-13T14:20:00Z',
     documentsCount: 2
@@ -102,7 +102,7 @@ const allMockClaims = [
     tipoSiniestro: 'enfermedad',
     tipoReclamo: 'pago-directo',
     aseguradora: 'AXA',
-    status: 'sent-to-insurer',
+    status: 'verified',
     createdAt: '2024-01-05T11:30:00Z',
     updatedAt: '2024-01-16T08:45:00Z',
     documentsCount: 8
@@ -122,7 +122,7 @@ const allMockClaims = [
     tipoSiniestro: 'emergencia',
     tipoReclamo: 'carta-garantia',
     aseguradora: 'Qualitas',
-    status: 'finalized',
+    status: 'sent-to-insurer',
     createdAt: '2024-01-01T13:45:00Z',
     updatedAt: '2024-01-17T16:00:00Z',
     documentsCount: 6
@@ -193,7 +193,9 @@ export const claimsService = {
     // Simulate API call to GoHighLevel
     return new Promise((resolve) => {
       setTimeout(() => {
-        resolve(allMockClaims);
+        // Filter out archived claims for the main view
+        const activeClaims = allMockClaims.filter(claim => claim.status !== 'archived');
+        resolve(activeClaims);
       }, 1000);
     });
   },
@@ -279,6 +281,17 @@ export const claimsService = {
             allMockClaims[claimIndex].comments = comments;
           }
         }
+        
+        // Also update in mockClaims if it exists there
+        const userClaimIndex = mockClaims.findIndex(c => c.id === claimId);
+        if (userClaimIndex !== -1) {
+          mockClaims[userClaimIndex].status = status;
+          mockClaims[userClaimIndex].updatedAt = new Date().toISOString();
+          if (comments) {
+            mockClaims[userClaimIndex].comments = comments;
+          }
+        }
+        
         resolve({ success: true });
       }, 500);
     });
