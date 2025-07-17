@@ -1,4 +1,4 @@
-// Mock claims service 
+// Mock claims service
 // In production, this would connect to GoHighLevel API
 
 const mockClaims = [
@@ -191,6 +191,11 @@ const mockDocuments = {
   }
 };
 
+// Helper function to generate unique ID
+const generateClaimId = () => {
+  return 'claim-' + Math.random().toString(36).substr(2, 9);
+};
+
 export const claimsService = {
   async getUserClaims(contactId) {
     // Simulate API call to GoHighLevel
@@ -222,6 +227,29 @@ export const claimsService = {
           reject(new Error('Claim not found'));
         }
       }, 500);
+    });
+  },
+
+  async createClaim(claimData) {
+    // Simulate API call to GoHighLevel
+    return new Promise((resolve) => {
+      setTimeout(() => {
+        const newClaim = {
+          id: generateClaimId(),
+          contactId: 'demo-contact-456', // In production, get from auth context
+          ...claimData,
+          status: 'pending',
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString(),
+          documentsCount: 0
+        };
+
+        // Add to mock data
+        mockClaims.push(newClaim);
+        allMockClaims.push(newClaim);
+
+        resolve(newClaim);
+      }, 1500);
     });
   },
 

@@ -1,7 +1,8 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { motion } from 'framer-motion';
 import Header from '../components/Header';
 import ClaimCard from '../components/ClaimCard';
+import NewClaimModal from '../components/NewClaimModal';
 import { useClaims } from '../contexts/ClaimsContext';
 import { useAuth } from '../contexts/AuthContext';
 import LoadingSpinner from '../components/LoadingSpinner';
@@ -11,8 +12,18 @@ import SafeIcon from '../common/SafeIcon';
 const { FiPlus, FiFileText } = FiIcons;
 
 const ClientDashboard = () => {
-  const { claims, loading } = useClaims();
+  const { claims, loading, fetchClaims } = useClaims();
   const { user } = useAuth();
+  const [showNewClaimModal, setShowNewClaimModal] = useState(false);
+
+  const handleNewClaim = () => {
+    setShowNewClaimModal(true);
+  };
+
+  const handleClaimCreated = (newClaim) => {
+    // Refresh claims list
+    fetchClaims();
+  };
 
   if (loading) {
     return <LoadingSpinner />;
@@ -21,7 +32,6 @@ const ClientDashboard = () => {
   return (
     <div className="min-h-screen bg-gray-50">
       <Header />
-      
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <motion.div
           initial={{ opacity: 0, y: 20 }}
@@ -90,7 +100,10 @@ const ClientDashboard = () => {
                 <h3 className="text-lg font-semibold text-gray-900">
                   Mis Reclamos
                 </h3>
-                <button className="flex items-center space-x-2 px-4 py-2 bg-fortex-primary text-white rounded-lg hover:bg-fortex-secondary transition-colors">
+                <button
+                  onClick={handleNewClaim}
+                  className="flex items-center space-x-2 px-4 py-2 bg-fortex-primary text-white rounded-lg hover:bg-fortex-secondary transition-colors"
+                >
                   <SafeIcon icon={FiPlus} className="w-4 h-4" />
                   <span>Nuevo Reclamo</span>
                 </button>
@@ -107,7 +120,10 @@ const ClientDashboard = () => {
                   <p className="text-gray-600 mb-6">
                     Cuando tengas reclamos pendientes, aparecerán aquí
                   </p>
-                  <button className="px-6 py-3 bg-fortex-primary text-white rounded-lg hover:bg-fortex-secondary transition-colors">
+                  <button
+                    onClick={handleNewClaim}
+                    className="px-6 py-3 bg-fortex-primary text-white rounded-lg hover:bg-fortex-secondary transition-colors"
+                  >
                     Crear primer reclamo
                   </button>
                 </div>
@@ -122,6 +138,13 @@ const ClientDashboard = () => {
           </div>
         </motion.div>
       </main>
+
+      {/* New Claim Modal */}
+      <NewClaimModal
+        isOpen={showNewClaimModal}
+        onClose={() => setShowNewClaimModal(false)}
+        onClaimCreated={handleClaimCreated}
+      />
     </div>
   );
 };
