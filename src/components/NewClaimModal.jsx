@@ -17,42 +17,34 @@ const NewClaimModal = ({ isOpen, onClose, onClaimCreated }) => {
     lastName: user?.lastName || '',
     email: user?.email || '',
     phone: user?.phone || '',
-    
     // Relationship and insured info
     relacionAsegurado: '',
     nombreAsegurado: '',
     emailAsegurado: '',
-    
     // Policy info
     numeroPoliza: '',
     digitoVerificador: '',
-    
+    aseguradora: '',
     // Claim info
     tipoSiniestro: '',
     tipoReclamo: '',
-    
     // Additional details
     descripcionSiniestro: '',
     fechaSiniestro: ''
   });
 
   const handleInputChange = (field, value) => {
-    setFormData(prev => ({
-      ...prev,
-      [field]: value
-    }));
+    setFormData(prev => ({ ...prev, [field]: value }));
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
-
     try {
       const newClaim = await claimsService.createClaim(formData);
       toast.success('¡Reclamo creado exitosamente!');
       onClaimCreated(newClaim);
       onClose();
-      
       // Reset form
       setFormData({
         firstName: user?.firstName || '',
@@ -64,6 +56,7 @@ const NewClaimModal = ({ isOpen, onClose, onClaimCreated }) => {
         emailAsegurado: '',
         numeroPoliza: '',
         digitoVerificador: '',
+        aseguradora: '',
         tipoSiniestro: '',
         tipoReclamo: '',
         descripcionSiniestro: '',
@@ -262,6 +255,22 @@ const NewClaimModal = ({ isOpen, onClose, onClaimCreated }) => {
                     placeholder="7"
                     maxLength="1"
                   />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Aseguradora
+                  </label>
+                  <select
+                    required
+                    value={formData.aseguradora}
+                    onChange={(e) => handleInputChange('aseguradora', e.target.value)}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-fortex-primary focus:border-transparent"
+                  >
+                    <option value="">Seleccionar...</option>
+                    <option value="GNP">GNP</option>
+                    <option value="AXA">AXA</option>
+                    <option value="Qualitas">Qualitas</option>
+                  </select>
                 </div>
               </div>
             </div>

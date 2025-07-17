@@ -32,7 +32,7 @@ const ClientDashboard = () => {
   return (
     <div className="min-h-screen bg-gray-50">
       <Header />
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      <main className="w-full mx-auto px-[5%] py-8">
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
@@ -61,7 +61,6 @@ const ClientDashboard = () => {
                 </div>
               </div>
             </motion.div>
-
             <motion.div
               className="bg-white rounded-lg shadow-sm p-6"
               whileHover={{ y: -2 }}
@@ -76,7 +75,6 @@ const ClientDashboard = () => {
                 </div>
               </div>
             </motion.div>
-
             <motion.div
               className="bg-white rounded-lg shadow-sm p-6"
               whileHover={{ y: -2 }}
@@ -109,7 +107,6 @@ const ClientDashboard = () => {
                 </button>
               </div>
             </div>
-
             <div className="p-6">
               {claims.length === 0 ? (
                 <div className="text-center py-12">

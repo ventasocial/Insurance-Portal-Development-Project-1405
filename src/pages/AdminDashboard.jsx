@@ -26,11 +26,13 @@ const AdminDashboard = () => {
 
   const getClaimsByStatus = (status) => {
     return claims.filter(claim => 
-      claim.status === status &&
+      claim.status === status && 
       (searchTerm === '' || 
-       claim.nombreAsegurado?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-       claim.email?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-       claim.numeroPoliza?.toLowerCase().includes(searchTerm.toLowerCase()))
+        claim.nombreAsegurado?.toLowerCase().includes(searchTerm.toLowerCase()) || 
+        claim.email?.toLowerCase().includes(searchTerm.toLowerCase()) || 
+        claim.numeroPoliza?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        claim.aseguradora?.toLowerCase().includes(searchTerm.toLowerCase())
+      )
     );
   };
 
@@ -41,7 +43,6 @@ const AdminDashboard = () => {
     if (destination.droppableId === source.droppableId && destination.index === source.index) return;
 
     const newStatus = destination.droppableId;
-    
     try {
       await updateClaimStatus(draggableId, newStatus);
       toast.success('Estado del reclamo actualizado');
@@ -54,13 +55,14 @@ const AdminDashboard = () => {
     return <LoadingSpinner />;
   }
 
-  const filteredClaims = filterStatus === 'all' ? claims : claims.filter(claim => claim.status === filterStatus);
+  const filteredClaims = filterStatus === 'all' 
+    ? claims 
+    : claims.filter(claim => claim.status === filterStatus);
 
   return (
     <div className="min-h-screen bg-gray-50">
       <Header />
-      
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      <main className="w-full mx-auto px-[5%] py-8">
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
@@ -103,14 +105,13 @@ const AdminDashboard = () => {
                   <SafeIcon icon={FiSearch} className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
                   <input
                     type="text"
-                    placeholder="Buscar por nombre, email o póliza..."
+                    placeholder="Buscar por nombre, email, póliza o aseguradora..."
                     value={searchTerm}
                     onChange={(e) => setSearchTerm(e.target.value)}
                     className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-fortex-primary focus:border-transparent"
                   />
                 </div>
               </div>
-              
               <div className="sm:w-48">
                 <div className="relative">
                   <SafeIcon icon={FiFilter} className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
@@ -139,15 +140,12 @@ const AdminDashboard = () => {
                   <h3 className="font-semibold text-gray-900 mb-4 text-center">
                     {column.title}
                   </h3>
-                  
                   <Droppable droppableId={column.status}>
                     {(provided, snapshot) => (
                       <div
                         ref={provided.innerRef}
                         {...provided.droppableProps}
-                        className={`min-h-96 space-y-3 ${
-                          snapshot.isDraggingOver ? 'bg-blue-50 border-2 border-blue-300 border-dashed' : ''
-                        }`}
+                        className={`min-h-96 space-y-3 ${snapshot.isDraggingOver ? 'bg-blue-50 border-2 border-blue-300 border-dashed' : ''}`}
                       >
                         {getClaimsByStatus(column.status).map((claim, index) => (
                           <Draggable key={claim.id} draggableId={claim.id} index={index}>
@@ -156,9 +154,7 @@ const AdminDashboard = () => {
                                 ref={provided.innerRef}
                                 {...provided.draggableProps}
                                 {...provided.dragHandleProps}
-                                className={`${
-                                  snapshot.isDragging ? 'transform rotate-5 shadow-lg' : ''
-                                }`}
+                                className={`${snapshot.isDragging ? 'transform rotate-5 shadow-lg' : ''}`}
                               >
                                 <ClaimCard claim={claim} isAdmin={true} />
                               </div>

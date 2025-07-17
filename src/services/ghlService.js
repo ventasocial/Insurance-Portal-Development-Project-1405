@@ -23,11 +23,9 @@ class GHLService {
 
     try {
       const response = await fetch(url, config);
-      
       if (!response.ok) {
         throw new Error(`GHL API Error: ${response.status} ${response.statusText}`);
       }
-
       return await response.json();
     } catch (error) {
       console.error('GHL API Request failed:', error);
@@ -55,10 +53,7 @@ class GHLService {
   async updateContactCustomField(contactId, fieldKey, value) {
     return this.makeRequest(`/contacts/${contactId}/customFields`, {
       method: 'POST',
-      body: JSON.stringify({
-        key: fieldKey,
-        value: value
-      })
+      body: JSON.stringify({ key: fieldKey, value: value })
     });
   }
 
@@ -82,17 +77,12 @@ class GHLService {
   async updateOpportunityCustomField(opportunityId, fieldKey, value) {
     return this.makeRequest(`/opportunities/${opportunityId}/customFields`, {
       method: 'POST',
-      body: JSON.stringify({
-        key: fieldKey,
-        value: value
-      })
+      body: JSON.stringify({ key: fieldKey, value: value })
     });
   }
 
   async updateOpportunityStage(opportunityId, stageId) {
-    return this.updateOpportunity(opportunityId, {
-      pipelineStageId: stageId
-    });
+    return this.updateOpportunity(opportunityId, { pipelineStageId: stageId });
   }
 
   // File Upload Methods
@@ -121,7 +111,6 @@ class GHLService {
       // In production, you'd verify the token signature and extract contact info
       const decodedToken = this.decodeToken(token);
       const contact = await this.getContact(decodedToken.contactId);
-      
       return {
         contactId: contact.id,
         email: contact.email,
@@ -138,12 +127,10 @@ class GHLService {
     // Simplified token decoding - in production use proper JWT library
     try {
       const payload = JSON.parse(atob(token.split('.')[1]));
-      
       // Check if token is expired
       if (payload.exp && payload.exp < Date.now() / 1000) {
         throw new Error('Token expired');
       }
-      
       return payload;
     } catch (error) {
       throw new Error('Invalid token format');
@@ -172,7 +159,7 @@ class GHLService {
       lastName: contact.lastName,
       email: contact.email,
       phone: contact.phone,
-      
+
       // Opportunity custom fields
       relacionAsegurado: opportunity.customFields?.relacion_con_el_asegurado,
       nombreAsegurado: opportunity.customFields?.nombre_completo_del_asegurado,
@@ -181,18 +168,19 @@ class GHLService {
       tipoSiniestro: opportunity.customFields?.tipo_de_siniestro,
       tipoReclamo: opportunity.customFields?.tipo_de_reclamo,
       digitoVerificador: opportunity.customFields?.digito_verificador,
-      
+      aseguradora: opportunity.customFields?.aseguradora,
+
       // Document fields
       avisoAccidente: opportunity.customFields?.aviso_de_accidente_o_enfermedad,
       informeMedico: opportunity.customFields?.informe_medico,
       formatoReembolso: opportunity.customFields?.formato_de_reembolso,
       recetasMedicas: opportunity.customFields?.recetas_medicas__disponibles,
       estudiosLaboratorio: opportunity.customFields?.estudios_de_laboratorio_e_imagenologia__disponibilidad,
-      
+
       // Document review fields
       informeMedicoRevision: opportunity.customFields?.informe_medico__revision,
       informeMedicoComentarios: opportunity.customFields?.informe_medico__comentarios,
-      
+
       // Status
       status: this.mapPipelineStageToStatus(opportunity.pipelineStageId),
       pipelineStageId: opportunity.pipelineStageId
@@ -203,7 +191,6 @@ class GHLService {
     const updates = {};
     updates[documentType] = fileUrl;
     updates[`${documentType}__revision`] = status;
-    
     return this.updateOpportunityCustomField(opportunityId, updates);
   }
 
@@ -213,20 +200,18 @@ class GHLService {
     if (comments) {
       updates[`${documentType}__comentarios`] = comments;
     }
-    
     return this.updateOpportunityCustomField(opportunityId, updates);
   }
 
   mapPipelineStageToStatus(stageId) {
     // This mapping would be configured based on your GHL pipeline setup
     const stageMapping = {
-      'stage-1': 'pending',           // Documentación Recibida
-      'stage-2': 'incomplete',        // Documentación Incompleta
-      'stage-3': 'verified',          // Documentación Verificada
-      'stage-4': 'sent-to-insurer',   // Enviado a la Aseguradora
-      'stage-5': 'finalized'          // Reclamo Finalizado
+      'stage-1': 'pending',         // Documentación Recibida
+      'stage-2': 'incomplete',      // Documentación Incompleta
+      'stage-3': 'verified',        // Documentación Verificada
+      'stage-4': 'sent-to-insurer', // Enviado a la Aseguradora
+      'stage-5': 'finalized'        // Reclamo Finalizado
     };
-    
     return stageMapping[stageId] || 'pending';
   }
 
@@ -238,7 +223,6 @@ class GHLService {
       'sent-to-insurer': 'stage-4',
       'finalized': 'stage-5'
     };
-    
     return statusMapping[status] || 'stage-1';
   }
 }

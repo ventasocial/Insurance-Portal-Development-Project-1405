@@ -27,16 +27,12 @@ const ClaimForm = () => {
   }, [claimId, claims]);
 
   const handleInputChange = (field, value) => {
-    setFormData(prev => ({
-      ...prev,
-      [field]: value
-    }));
+    setFormData(prev => ({ ...prev, [field]: value }));
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
-
     try {
       await claimsService.updateClaim(claimId, formData);
       toast.success('Información actualizada correctamente');
@@ -52,7 +48,7 @@ const ClaimForm = () => {
     return (
       <div className="min-h-screen bg-gray-50">
         <Header />
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <div className="w-full mx-auto px-[5%] py-8">
           <div className="text-center">
             <p className="text-gray-600">Cargando información del reclamo...</p>
           </div>
@@ -61,11 +57,13 @@ const ClaimForm = () => {
     );
   }
 
+  // Extract just the number part from claim ID
+  const claimNumber = claim.id?.replace('claim-', '');
+
   return (
     <div className="min-h-screen bg-gray-50">
       <Header />
-      
-      <main className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      <main className="w-full max-w-4xl mx-auto px-[5%] py-8">
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
@@ -79,9 +77,8 @@ const ClaimForm = () => {
               <SafeIcon icon={FiArrowLeft} className="w-4 h-4" />
               <span>Volver al dashboard</span>
             </button>
-            
             <h2 className="text-3xl font-bold text-gray-900 mb-2">
-              Reclamo #{claim.id?.slice(-8)}
+              Reclamo-{claimNumber}
             </h2>
             <p className="text-gray-600">
               Completa la información de tu reclamo
@@ -94,7 +91,6 @@ const ClaimForm = () => {
                 Información del Reclamo
               </h3>
             </div>
-
             <form onSubmit={handleSubmit} className="p-6 space-y-6">
               {/* Contact Information */}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -109,7 +105,6 @@ const ClaimForm = () => {
                     className="w-full px-3 py-2 border border-gray-300 rounded-lg bg-gray-50 text-gray-600"
                   />
                 </div>
-
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">
                     Email
@@ -121,7 +116,6 @@ const ClaimForm = () => {
                     className="w-full px-3 py-2 border border-gray-300 rounded-lg bg-gray-50 text-gray-600"
                   />
                 </div>
-
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">
                     WhatsApp
@@ -133,7 +127,6 @@ const ClaimForm = () => {
                     className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-fortex-primary focus:border-transparent"
                   />
                 </div>
-
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">
                     Relación con el Asegurado
@@ -167,7 +160,6 @@ const ClaimForm = () => {
                     required
                   />
                 </div>
-
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">
                     Email del Asegurado
@@ -179,7 +171,6 @@ const ClaimForm = () => {
                     className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-fortex-primary focus:border-transparent"
                   />
                 </div>
-
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">
                     Número de Póliza
@@ -192,7 +183,6 @@ const ClaimForm = () => {
                     required
                   />
                 </div>
-
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">
                     Dígito Verificador
@@ -210,6 +200,22 @@ const ClaimForm = () => {
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Aseguradora
+                  </label>
+                  <select
+                    value={formData.aseguradora || claim.aseguradora || ''}
+                    onChange={(e) => handleInputChange('aseguradora', e.target.value)}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-fortex-primary focus:border-transparent"
+                    required
+                  >
+                    <option value="">Seleccionar...</option>
+                    <option value="GNP">GNP</option>
+                    <option value="AXA">AXA</option>
+                    <option value="Qualitas">Qualitas</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
                     Tipo de Siniestro
                   </label>
                   <select
@@ -225,7 +231,6 @@ const ClaimForm = () => {
                     <option value="emergencia">Emergencia</option>
                   </select>
                 </div>
-
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">
                     Tipo de Reclamo
@@ -253,7 +258,6 @@ const ClaimForm = () => {
                   <SafeIcon icon={FiUpload} className="w-4 h-4" />
                   <span>Subir Documentos</span>
                 </button>
-
                 <button
                   type="submit"
                   disabled={loading}

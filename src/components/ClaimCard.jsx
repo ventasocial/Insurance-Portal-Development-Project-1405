@@ -11,52 +11,34 @@ const ClaimCard = ({ claim, isAdmin = false }) => {
 
   const getStatusIcon = (status) => {
     switch (status) {
-      case 'pending':
-        return FiClock;
-      case 'approved':
-        return FiCheckCircle;
-      case 'rejected':
-        return FiXCircle;
-      default:
-        return FiFileText;
+      case 'pending': return FiClock;
+      case 'approved': return FiCheckCircle;
+      case 'rejected': return FiXCircle;
+      default: return FiFileText;
     }
   };
 
   const getStatusColor = (status) => {
     switch (status) {
-      case 'pending':
-        return 'text-yellow-600 bg-yellow-100';
-      case 'approved':
-        return 'text-green-600 bg-green-100';
-      case 'rejected':
-        return 'text-red-600 bg-red-100';
-      case 'under-review':
-        return 'text-blue-600 bg-blue-100';
-      default:
-        return 'text-gray-600 bg-gray-100';
+      case 'pending': return 'text-yellow-600 bg-yellow-100';
+      case 'approved': return 'text-green-600 bg-green-100';
+      case 'rejected': return 'text-red-600 bg-red-100';
+      case 'under-review': return 'text-blue-600 bg-blue-100';
+      default: return 'text-gray-600 bg-gray-100';
     }
   };
 
   const getStatusText = (status) => {
     switch (status) {
-      case 'pending':
-        return 'Pendiente';
-      case 'approved':
-        return 'Aprobado';
-      case 'rejected':
-        return 'Rechazado';
-      case 'under-review':
-        return 'En Revisión';
-      case 'incomplete':
-        return 'Incompleto';
-      case 'verified':
-        return 'Verificado';
-      case 'sent-to-insurer':
-        return 'Enviado a Aseguradora';
-      case 'finalized':
-        return 'Finalizado';
-      default:
-        return 'Desconocido';
+      case 'pending': return 'Pendiente';
+      case 'approved': return 'Aprobado';
+      case 'rejected': return 'Rechazado';
+      case 'under-review': return 'En Revisión';
+      case 'incomplete': return 'Incompleto';
+      case 'verified': return 'Verificado';
+      case 'sent-to-insurer': return 'Enviado a Aseguradora';
+      case 'finalized': return 'Finalizado';
+      default: return 'Desconocido';
     }
   };
 
@@ -70,6 +52,9 @@ const ClaimCard = ({ claim, isAdmin = false }) => {
     }
   };
 
+  // Extract just the number part from claim ID
+  const claimNumber = claim.id?.replace('claim-', '');
+
   return (
     <motion.div
       className="bg-white rounded-lg shadow-md p-6 cursor-pointer hover:shadow-lg transition-shadow"
@@ -81,7 +66,7 @@ const ClaimCard = ({ claim, isAdmin = false }) => {
           <SafeIcon icon={FiFileText} className="w-8 h-8 text-fortex-primary" />
           <div>
             <h3 className="text-lg font-semibold text-gray-900">
-              Reclamo #{claim.id?.slice(-8)}
+              Reclamo-{claimNumber}
             </h3>
             <p className="text-sm text-gray-600">
               {claim.tipoSiniestro} - {claim.tipoReclamo}
@@ -102,6 +87,10 @@ const ClaimCard = ({ claim, isAdmin = false }) => {
         <div className="flex justify-between text-sm">
           <span className="text-gray-600">Póliza:</span>
           <span className="font-medium">{claim.numeroPoliza}</span>
+        </div>
+        <div className="flex justify-between text-sm">
+          <span className="text-gray-600">Aseguradora:</span>
+          <span className="font-medium">{claim.aseguradora || 'No especificada'}</span>
         </div>
         <div className="flex justify-between text-sm">
           <span className="text-gray-600">Fecha:</span>
