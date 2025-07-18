@@ -37,12 +37,30 @@ const ClaimForm = () => {
     return regex.test(phone);
   };
 
+  // Validación de email
+  const validateEmail = (email) => {
+    const regex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    return regex.test(email);
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     
     // Validar número de teléfono
     if (!validatePhone(formData.phone)) {
       toast.error('El número de WhatsApp debe tener el formato: +52 81 1234 5678');
+      return;
+    }
+    
+    // Validar email
+    if (!validateEmail(formData.email)) {
+      toast.error('Por favor ingresa un correo electrónico válido');
+      return;
+    }
+
+    // Validar email del asegurado si está presente
+    if (formData.emailAsegurado && !validateEmail(formData.emailAsegurado)) {
+      toast.error('Por favor ingresa un correo electrónico válido para el asegurado');
       return;
     }
     
@@ -141,7 +159,7 @@ const ClaimForm = () => {
                     className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-fortex-primary focus:border-transparent"
                   />
                   <small className="text-xs text-gray-500 mt-1 block">
-                    Formato: +52 81 1234 5678
+                    Ingresa tu número con código de país
                   </small>
                 </div>
                 <div>
@@ -233,21 +251,6 @@ const ClaimForm = () => {
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Tipo de Siniestro
-                  </label>
-                  <select
-                    value={formData.tipoSiniestro || claim.tipoSiniestro || ''}
-                    onChange={(e) => handleInputChange('tipoSiniestro', e.target.value)}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-fortex-primary focus:border-transparent"
-                    required
-                  >
-                    <option value="">Seleccionar...</option>
-                    <option value="inicial">Inicial</option>
-                    <option value="complemento">Complemento</option>
-                  </select>
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
                     Tipo de Reclamo
                   </label>
                   <select
@@ -260,6 +263,22 @@ const ClaimForm = () => {
                     <option value="reembolso">Reembolso</option>
                     <option value="programacion">Programación</option>
                     <option value="maternidad">Maternidad</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Tipo de Siniestro
+                  </label>
+                  <select
+                    value={formData.tipoSiniestro || claim.tipoSiniestro || ''}
+                    onChange={(e) => handleInputChange('tipoSiniestro', e.target.value)}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-fortex-primary focus:border-transparent"
+                    required={formData.tipoReclamo === 'reembolso'}
+                    disabled={formData.tipoReclamo !== 'reembolso'}
+                  >
+                    <option value="">Seleccionar...</option>
+                    <option value="inicial">Inicial</option>
+                    <option value="complemento">Complemento</option>
                   </select>
                 </div>
 

@@ -9,6 +9,7 @@ import LoadingSpinner from '../components/LoadingSpinner';
 import * as FiIcons from 'react-icons/fi';
 import SafeIcon from '../common/SafeIcon';
 import toast from 'react-hot-toast';
+import { claimsService } from '../services/claimsService';
 
 const { FiFilter, FiSearch, FiClock, FiList, FiPlus } = FiIcons;
 
@@ -22,7 +23,7 @@ const AdminDashboard = () => {
     { field: 'nombreAsegurado', label: 'Asegurado', value: '', include: true },
     { field: 'tipoReclamo', label: 'Tipo', value: '', include: true },
     { field: 'aseguradora', label: 'Aseguradora', value: '', include: true },
-    { field: 'date', label: 'Fecha', value: '', include: true, dateFilter: 'after' }
+    { field: 'date', label: 'Fecha de Creación', value: '', include: true, dateFilter: 'after' }
   ]);
 
   const columns = [
@@ -57,7 +58,9 @@ const AdminDashboard = () => {
         claim.nombreAsegurado?.toLowerCase().includes(searchTerm.toLowerCase()) ||
         claim.email?.toLowerCase().includes(searchTerm.toLowerCase()) ||
         claim.numeroPoliza?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        claim.aseguradora?.toLowerCase().includes(searchTerm.toLowerCase())
+        claim.aseguradora?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        (claim.numeroReclamoAseguradora && claim.numeroReclamoAseguradora.toLowerCase().includes(searchTerm.toLowerCase())) ||
+        (claim.numeroReclamo && claim.numeroReclamo.toLowerCase().includes(searchTerm.toLowerCase()))
       )
     );
   };
@@ -81,6 +84,24 @@ const AdminDashboard = () => {
           } else {
             return claimDate <= filterDate;
           }
+        }
+        
+        if (filter.field === 'status') {
+          return filter.include 
+            ? claim.status === filter.value
+            : claim.status !== filter.value;
+        }
+
+        if (filter.field === 'tipoReclamo') {
+          return filter.include 
+            ? claim.tipoReclamo === filter.value
+            : claim.tipoReclamo !== filter.value;
+        }
+
+        if (filter.field === 'aseguradora') {
+          return filter.include 
+            ? claim.aseguradora === filter.value
+            : claim.aseguradora !== filter.value;
         }
         
         let fieldValue = claim[filter.field];
@@ -118,6 +139,35 @@ const AdminDashboard = () => {
     fetchClaims();
   };
 
+  const handleCreateComplemento = (claim) => {
+    // Crear un nuevo reclamo complemento copiando datos del reclamo original
+    const complementoData = {
+      firstName: claim.firstName,
+      lastName: claim.lastName,
+      email: claim.email,
+      phone: claim.phone,
+      relacionAsegurado: claim.relacionAsegurado,
+      nombreAsegurado: claim.nombreAsegurado,
+      emailAsegurado: claim.emailAsegurado,
+      numeroPoliza: claim.numeroPoliza,
+      digitoVerificador: claim.digitoVerificador,
+      aseguradora: claim.aseguradora,
+      tipoReclamo: 'reembolso',
+      tipoSiniestro: 'complemento',
+      numeroReclamo: claim.numeroReclamoAseguradora || ''
+    };
+    
+    claimsService.createClaim(complementoData)
+      .then(newClaim => {
+        toast.success('Reclamo complemento creado exitosamente');
+        fetchClaims();
+      })
+      .catch(error => {
+        toast.error('Error al crear reclamo complemento');
+        console.error('Error creating complemento:', error);
+      });
+  };
+
   if (loading) {
     return <LoadingSpinner />;
   }
@@ -125,6 +175,11 @@ const AdminDashboard = () => {
   const filteredClaims = claims.filter(claim => claim.status !== 'archived');
   const tableFilteredClaims = applyFilters(filteredClaims);
   const kanbanFilteredClaims = applyFilters(claims.filter(claim => claim.status !== 'archived'));
+
+  // Obtener opciones únicas para los filtros de selección
+  const statusOptions = [...new Set(filteredClaims.map(claim => claim.status))];
+  const tipoReclamoOptions = [...new Set(filteredClaims.map(claim => claim.tipoReclamo))];
+  const aseguradoraOptions = [...new Set(filteredClaims.map(claim => claim.aseguradora))];
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -219,72 +274,148 @@ const AdminDashboard = () => {
                 </button>
               </div>
               
-              {viewMode === 'kanban' && (
-                <div className="flex-1 sm:ml-4">
-                  <div className="relative">
-                    <SafeIcon
-                      icon={FiSearch}
-                      className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5"
-                    />
-                    <input
-                      type="text"
-                      placeholder="Buscar por nombre, email, póliza o aseguradora..."
-                      value={searchTerm}
-                      onChange={(e) => setSearchTerm(e.target.value)}
-                      className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-fortex-primary focus:border-transparent"
-                    />
-                  </div>
+              <div className="flex-1 sm:ml-4">
+                <div className="relative">
+                  <SafeIcon
+                    icon={FiSearch}
+                    className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5"
+                  />
+                  <input
+                    type="text"
+                    placeholder="Buscar por nombre, email, póliza, aseguradora o número de reclamo..."
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                    className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-fortex-primary focus:border-transparent"
+                  />
                 </div>
-              )}
+              </div>
             </div>
 
             {/* Filtros avanzados para ambas vistas */}
             <div className="grid grid-cols-1 md:grid-cols-5 gap-4 mt-4">
-              {filters.map((filter, index) => (
-                <div key={index} className="flex flex-col space-y-2">
-                  <div className="flex items-center justify-between">
-                    <label className="text-sm font-medium text-gray-700">
-                      {filter.label}
-                    </label>
-                    {filter.field !== 'date' ? (
-                      <select
-                        value={filter.include ? 'include' : 'exclude'}
-                        onChange={(e) => handleFilterChange(index, 'include', e.target.value === 'include')}
-                        className="text-xs px-2 py-1 border border-gray-300 rounded"
-                      >
-                        <option value="include">Incluir</option>
-                        <option value="exclude">Excluir</option>
-                      </select>
-                    ) : (
-                      <select
-                        value={filter.dateFilter || 'after'}
-                        onChange={(e) => handleFilterChange(index, 'dateFilter', e.target.value)}
-                        className="text-xs px-2 py-1 border border-gray-300 rounded"
-                      >
-                        <option value="after">Después de</option>
-                        <option value="before">Antes de</option>
-                      </select>
-                    )}
-                  </div>
-                  
-                  {filter.field === 'date' ? (
-                    <input
-                      type="date"
-                      value={filter.value}
-                      onChange={(e) => handleFilterChange(index, 'value', e.target.value)}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-fortex-primary focus:border-transparent"
-                    />
-                  ) : (
-                    <input
-                      type="text"
-                      placeholder={`Filtrar por ${filter.label.toLowerCase()}`}
-                      value={filter.value}
-                      onChange={(e) => handleFilterChange(index, 'value', e.target.value)}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-fortex-primary focus:border-transparent"
-                    />
-                  )}
+              <div className="flex flex-col space-y-2">
+                <div className="flex items-center justify-between">
+                  <label className="text-sm font-medium text-gray-700">
+                    Estado
+                  </label>
+                  <select
+                    value={filters[0].include ? 'include' : 'exclude'}
+                    onChange={(e) => handleFilterChange(0, 'include', e.target.value === 'include')}
+                    className="text-xs px-2 py-1 border border-gray-300 rounded"
+                  >
+                    <option value="include">Incluir</option>
+                    <option value="exclude">Excluir</option>
+                  </select>
                 </div>
-              ))}
+                <select
+                  value={filters[0].value}
+                  onChange={(e) => handleFilterChange(0, 'value', e.target.value)}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-fortex-primary focus:border-transparent"
+                >
+                  <option value="">Todos</option>
+                  <option value="pending">Pendiente</option>
+                  <option value="verified">Aprobado</option>
+                  <option value="sent-to-insurer">Enviado a Aseguradora</option>
+                  <option value="rejected">Rechazado</option>
+                </select>
+              </div>
+
+              <div className="flex flex-col space-y-2">
+                <div className="flex items-center justify-between">
+                  <label className="text-sm font-medium text-gray-700">
+                    Tipo
+                  </label>
+                  <select
+                    value={filters[2].include ? 'include' : 'exclude'}
+                    onChange={(e) => handleFilterChange(2, 'include', e.target.value === 'include')}
+                    className="text-xs px-2 py-1 border border-gray-300 rounded"
+                  >
+                    <option value="include">Incluir</option>
+                    <option value="exclude">Excluir</option>
+                  </select>
+                </div>
+                <select
+                  value={filters[2].value}
+                  onChange={(e) => handleFilterChange(2, 'value', e.target.value)}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-fortex-primary focus:border-transparent"
+                >
+                  <option value="">Todos</option>
+                  <option value="reembolso">Reembolso</option>
+                  <option value="programacion">Programación</option>
+                  <option value="maternidad">Maternidad</option>
+                </select>
+              </div>
+
+              <div className="flex flex-col space-y-2">
+                <div className="flex items-center justify-between">
+                  <label className="text-sm font-medium text-gray-700">
+                    Aseguradora
+                  </label>
+                  <select
+                    value={filters[3].include ? 'include' : 'exclude'}
+                    onChange={(e) => handleFilterChange(3, 'include', e.target.value === 'include')}
+                    className="text-xs px-2 py-1 border border-gray-300 rounded"
+                  >
+                    <option value="include">Incluir</option>
+                    <option value="exclude">Excluir</option>
+                  </select>
+                </div>
+                <select
+                  value={filters[3].value}
+                  onChange={(e) => handleFilterChange(3, 'value', e.target.value)}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-fortex-primary focus:border-transparent"
+                >
+                  <option value="">Todas</option>
+                  <option value="GNP">GNP</option>
+                  <option value="AXA">AXA</option>
+                  <option value="Qualitas">Qualitas</option>
+                </select>
+              </div>
+
+              <div className="flex flex-col space-y-2">
+                <div className="flex items-center justify-between">
+                  <label className="text-sm font-medium text-gray-700">
+                    Asegurado
+                  </label>
+                  <select
+                    value={filters[1].include ? 'include' : 'exclude'}
+                    onChange={(e) => handleFilterChange(1, 'include', e.target.value === 'include')}
+                    className="text-xs px-2 py-1 border border-gray-300 rounded"
+                  >
+                    <option value="include">Incluir</option>
+                    <option value="exclude">Excluir</option>
+                  </select>
+                </div>
+                <input
+                  type="text"
+                  placeholder="Filtrar por asegurado"
+                  value={filters[1].value}
+                  onChange={(e) => handleFilterChange(1, 'value', e.target.value)}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-fortex-primary focus:border-transparent"
+                />
+              </div>
+
+              <div className="flex flex-col space-y-2">
+                <div className="flex items-center justify-between">
+                  <label className="text-sm font-medium text-gray-700">
+                    Fecha de Creación
+                  </label>
+                  <select
+                    value={filters[4].dateFilter || 'after'}
+                    onChange={(e) => handleFilterChange(4, 'dateFilter', e.target.value)}
+                    className="text-xs px-2 py-1 border border-gray-300 rounded"
+                  >
+                    <option value="after">Después de</option>
+                    <option value="before">Antes de</option>
+                  </select>
+                </div>
+                <input
+                  type="date"
+                  value={filters[4].value}
+                  onChange={(e) => handleFilterChange(4, 'value', e.target.value)}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-fortex-primary focus:border-transparent"
+                />
+              </div>
             </div>
           </div>
 
@@ -305,6 +436,9 @@ const AdminDashboard = () => {
                         Póliza
                       </th>
                       <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Número de Reclamo
+                      </th>
+                      <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                         Aseguradora
                       </th>
                       <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
@@ -317,7 +451,7 @@ const AdminDashboard = () => {
                         Fecha
                       </th>
                       <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        Última Edición
+                        Acciones
                       </th>
                     </tr>
                   </thead>
@@ -326,24 +460,50 @@ const AdminDashboard = () => {
                       <tr
                         key={claim.id}
                         className="hover:bg-gray-50 cursor-pointer"
-                        onClick={() => window.location.href = `#/admin/claim/${claim.id}`}
                       >
-                        <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                        <td 
+                          className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900"
+                          onClick={() => window.location.href = `#/admin/claim/${claim.id}`}
+                        >
                           R-{claim.id.replace('claim-', '').toUpperCase()}
                         </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                        <td 
+                          className="px-6 py-4 whitespace-nowrap text-sm text-gray-500"
+                          onClick={() => window.location.href = `#/admin/claim/${claim.id}`}
+                        >
                           {claim.nombreAsegurado}
                         </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                        <td 
+                          className="px-6 py-4 whitespace-nowrap text-sm text-gray-500"
+                          onClick={() => window.location.href = `#/admin/claim/${claim.id}`}
+                        >
                           {claim.numeroPoliza}
                         </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                        <td 
+                          className="px-6 py-4 whitespace-nowrap text-sm text-gray-500"
+                          onClick={() => window.location.href = `#/admin/claim/${claim.id}`}
+                        >
+                          {claim.numeroReclamoAseguradora || claim.numeroReclamo || '-'}
+                        </td>
+                        <td 
+                          className="px-6 py-4 whitespace-nowrap text-sm text-gray-500"
+                          onClick={() => window.location.href = `#/admin/claim/${claim.id}`}
+                        >
                           {claim.aseguradora}
                         </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                        <td 
+                          className="px-6 py-4 whitespace-nowrap text-sm text-gray-500"
+                          onClick={() => window.location.href = `#/admin/claim/${claim.id}`}
+                        >
                           {claim.tipoReclamo}
+                          {claim.tipoReclamo === 'reembolso' && claim.tipoSiniestro && 
+                            <span className="ml-1 text-xs">({claim.tipoSiniestro})</span>
+                          }
                         </td>
-                        <td className="px-6 py-4 whitespace-nowrap">
+                        <td 
+                          className="px-6 py-4 whitespace-nowrap"
+                          onClick={() => window.location.href = `#/admin/claim/${claim.id}`}
+                        >
                           <span className={`px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full ${
                             claim.status === 'pending' 
                               ? 'bg-yellow-100 text-yellow-800'
@@ -366,11 +526,24 @@ const AdminDashboard = () => {
                                     : claim.status}
                           </span>
                         </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                        <td 
+                          className="px-6 py-4 whitespace-nowrap text-sm text-gray-500"
+                          onClick={() => window.location.href = `#/admin/claim/${claim.id}`}
+                        >
                           {new Date(claim.createdAt).toLocaleDateString()}
                         </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                          {new Date(claim.updatedAt).toLocaleDateString()} por {claim.lastEditedBy || 'Sistema'}
+                        <td className="px-6 py-4 whitespace-nowrap text-right">
+                          <div className="flex space-x-2">
+                            {claim.tipoReclamo === 'reembolso' && claim.tipoSiniestro === 'inicial' && claim.numeroReclamoAseguradora && (
+                              <button
+                                onClick={() => handleCreateComplemento(claim)}
+                                className="inline-flex items-center px-2.5 py-1.5 border border-fortex-primary text-xs font-medium rounded text-fortex-primary hover:bg-fortex-primary hover:text-white"
+                              >
+                                <SafeIcon icon={FiPlus} className="w-3 h-3 mr-1" />
+                                Complemento
+                              </button>
+                            )}
+                          </div>
                         </td>
                       </tr>
                     ))}
@@ -429,10 +602,24 @@ const AdminDashboard = () => {
                                           : ''
                                       }`}
                                     >
-                                      <ClaimCard
-                                        claim={claim}
-                                        isAdmin={true}
-                                      />
+                                      <div className="relative">
+                                        <ClaimCard
+                                          claim={claim}
+                                          isAdmin={true}
+                                        />
+                                        {claim.tipoReclamo === 'reembolso' && claim.tipoSiniestro === 'inicial' && claim.numeroReclamoAseguradora && (
+                                          <button
+                                            onClick={(e) => {
+                                              e.stopPropagation();
+                                              handleCreateComplemento(claim);
+                                            }}
+                                            className="absolute top-2 right-2 bg-fortex-primary text-white rounded-full p-1 hover:bg-fortex-secondary transition-colors"
+                                            title="Crear reclamo complemento"
+                                          >
+                                            <SafeIcon icon={FiPlus} className="w-4 h-4" />
+                                          </button>
+                                        )}
+                                      </div>
                                     </div>
                                   )}
                                 </Draggable>

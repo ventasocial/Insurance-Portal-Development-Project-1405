@@ -17,6 +17,7 @@ const NewClaimModal = ({ isOpen, onClose, onClaimCreated }) => {
   const [loadingSavedData, setLoadingSavedData] = useState(false);
   const [deletingAsegurado, setDeletingAsegurado] = useState(null);
   const [confirmarBorrado, setConfirmarBorrado] = useState(false);
+  const [saveAseguradoData, setSaveAseguradoData] = useState(true);
 
   const [formData, setFormData] = useState({
     // Contact info (pre-filled from user)
@@ -126,9 +127,11 @@ const NewClaimModal = ({ isOpen, onClose, onClaimCreated }) => {
       }
       
       fetchSavedAsegurados();
+      return true;
     } catch (error) {
       console.error('Error al guardar asegurado:', error);
       toast.error('No se pudo guardar la información');
+      return false;
     }
   };
 
@@ -205,6 +208,12 @@ const NewClaimModal = ({ isOpen, onClose, onClaimCreated }) => {
     return regex.test(phone);
   };
 
+  // Validación de email
+  const validateEmail = (email) => {
+    const regex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    return regex.test(email);
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     
@@ -214,13 +223,25 @@ const NewClaimModal = ({ isOpen, onClose, onClaimCreated }) => {
       return;
     }
 
+    // Validar email
+    if (!validateEmail(formData.email)) {
+      toast.error('Por favor ingresa un correo electrónico válido');
+      return;
+    }
+
+    // Validar email del asegurado si está presente
+    if (formData.emailAsegurado && !validateEmail(formData.emailAsegurado)) {
+      toast.error('Por favor ingresa un correo electrónico válido para el asegurado');
+      return;
+    }
+
     setLoading(true);
     try {
       const newClaim = await claimsService.createClaim(formData);
       toast.success('¡Reclamo creado exitosamente!');
       
-      // Guardar información del asegurado para futuros reclamos
-      if (formData.nombreAsegurado) {
+      // Guardar información del asegurado para futuros reclamos si está activado el checkbox
+      if (saveAseguradoData && formData.nombreAsegurado) {
         await handleSaveAsegurado();
       }
       
@@ -359,7 +380,7 @@ const NewClaimModal = ({ isOpen, onClose, onClaimCreated }) => {
                       placeholder="+52 81 1234 5678"
                     />
                     <small className="text-xs text-gray-500 mt-1 block">
-                      Formato: +52 81 1234 5678
+                      Ingresa tu número con código de país
                     </small>
                   </div>
                 </div>
@@ -382,15 +403,6 @@ const NewClaimModal = ({ isOpen, onClose, onClaimCreated }) => {
                     <SafeIcon icon={FiStar} className="w-4 h-4 mr-1" />
                     {showSavedAsegurados ? 'Ocultar guardados' : 'Asegurados guardados'}
                   </button>
-                  {formData.nombreAsegurado && (
-                    <button 
-                      type="button"
-                      onClick={handleSaveAsegurado}
-                      className="text-sm px-3 py-1 bg-green-50 text-green-600 rounded-md hover:bg-green-100"
-                    >
-                      Guardar asegurado
-                    </button>
-                  )}
                 </div>
               </div>
 
@@ -502,6 +514,18 @@ const NewClaimModal = ({ isOpen, onClose, onClaimCreated }) => {
                     className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-fortex-primary focus:border-transparent"
                     placeholder="email@asegurado.com"
                   />
+                </div>
+                <div className="flex items-center mt-4">
+                  <input
+                    type="checkbox"
+                    id="saveAseguradoData"
+                    checked={saveAseguradoData}
+                    onChange={(e) => setSaveAseguradoData(e.target.checked)}
+                    className="rounded border-gray-300 text-fortex-primary focus:ring-fortex-primary mr-2"
+                  />
+                  <label htmlFor="saveAseguradoData" className="text-sm text-gray-700">
+                    Guardar datos del Asegurado Afectado
+                  </label>
                 </div>
               </div>
             </div>
