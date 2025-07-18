@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import Header from '../components/Header';
+import DocumentUploadZone from '../components/DocumentUploadZone';
 import { useClaims } from '../contexts/ClaimsContext';
 import { claimsService } from '../services/claimsService';
 import { ghlService } from '../services/ghlService';
@@ -11,7 +12,7 @@ import toast from 'react-hot-toast';
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
 
-const { FiArrowLeft, FiSend, FiArchive, FiUser, FiMail, FiPhone, FiFileText, FiCalendar, FiCheckCircle, FiXCircle, FiDownload, FiClock } = FiIcons;
+const { FiArrowLeft, FiSend, FiArchive, FiUser, FiMail, FiPhone, FiFileText, FiCalendar, FiCheckCircle, FiXCircle, FiDownload, FiClock, FiUpload } = FiIcons;
 
 const AdminClaimDetail = () => {
   const { claimId } = useParams();
@@ -36,7 +37,6 @@ const AdminClaimDetail = () => {
     try {
       const docs = await claimsService.getClaimDocuments(id);
       setDocuments(docs);
-      
       // Initialize comments state from loaded documents
       const initialComments = {};
       Object.entries(docs).forEach(([docType, docInfo]) => {
@@ -46,6 +46,104 @@ const AdminClaimDetail = () => {
     } catch (error) {
       console.error('Error loading documents:', error);
     }
+  };
+
+  const getRequiredDocuments = (tipoReclamo, tipoSiniestro, tipoServicioReembolso, tipoServicioProgramacion, esCirugiaEspecializada) => {
+    let documents = {
+      formasAseguradora: [],
+      informacionPersonal: [],
+      documentosSiniestro: []
+    };
+
+    if (tipoReclamo === 'reembolso') {
+      // Documentos base para reembolso
+      documents.formasAseguradora = [
+        { key: 'avisoAccidente', name: 'Aviso de Accidente o Enfermedad', required: true },
+        { key: 'formatoReembolso', name: 'Formato de Reembolso', required: true },
+        { key: 'formatoBancario', name: 'Formato Único de Información Bancaria', required: true },
+        { key: 'informeMedico', name: 'Informe Médico', required: true },
+      ];
+
+      documents.informacionPersonal = [
+        { key: 'caratulaEstadoCuenta', name: 'Carátula del Estado de Cuenta', required: true },
+        { key: 'identificacionTitular', name: 'Identificación Oficial del Titular de la Cuenta Bancaria', required: true },
+        { key: 'identificacionAsegurado', name: 'Identificación Oficial del Asegurado Afectado o Tutor', required: true },
+      ];
+
+      documents.documentosSiniestro = [
+        { key: 'facturasReembolso', name: 'Facturas para Reembolso', required: true },
+        { key: 'recetasCorrespondientes', name: 'Recetas correspondientes a las facturas', required: true },
+        { key: 'estudiosCorrespondientes', name: 'Estudios correspondientes a las facturas', required: true }
+      ];
+
+      // Agregar documentos específicos según el tipo de servicio
+      const servicios = tipoServicioReembolso ? tipoServicioReembolso.split(',') : [];
+      if (servicios.includes('hospitales')) {
+        documents.documentosSiniestro.push({ key: 'facturaHospitales', name: 'Factura de Hospitales', required: true });
+      }
+      if (servicios.includes('honorarios-medicos')) {
+        documents.documentosSiniestro.push({ key: 'facturaHonorariosMedicos', name: 'Factura de Honorarios Médicos', required: true });
+      }
+      if (servicios.includes('estudios-laboratorio')) {
+        documents.documentosSiniestro.push(
+          { key: 'facturaEstudiosLab', name: 'Factura de Estudios de Laboratorio e Imagenología', required: true },
+          { key: 'estudiosLaboratorio', name: 'Estudios de Laboratorio e Imagenología', required: true }
+        );
+      }
+      if (servicios.includes('medicamentos')) {
+        documents.documentosSiniestro.push(
+          { key: 'facturaMedicamentos', name: 'Factura de Medicamentos', required: true },
+          { key: 'recetaMedicamentos', name: 'Receta de Medicamentos', required: true }
+        );
+      }
+      if (servicios.includes('rehabilitacion')) {
+        documents.documentosSiniestro.push(
+          { key: 'facturaRehabilitacion', name: 'Factura de Rehabilitación', required: true },
+          { key: 'recetaRehabilitacion', name: 'Recetas de Rehabilitación', required: true },
+          { key: 'carnetAsistencia', name: 'Carnet de Asistencia a Rehabilitación', required: true }
+        );
+      }
+    } else if (tipoReclamo === 'programacion') {
+      // Documentos base para programación
+      documents.formasAseguradora = [
+        { key: 'avisoAccidente', name: 'Aviso de Accidente o Enfermedad', required: true },
+        { key: 'informeMedico', name: 'Informe Médico', required: true },
+      ];
+
+      documents.informacionPersonal = [
+        { key: 'identificacionAsegurado', name: 'Identificación Oficial del Asegurado', required: true }
+      ];
+
+      documents.documentosSiniestro = [
+        { key: 'estudiosInforme', name: 'Estudios que sustenten cada informe médico', required: true }
+      ];
+
+      // Agregar documentos específicos según el tipo de servicio
+      const servicios = tipoServicioProgramacion ? tipoServicioProgramacion.split(',') : [];
+      if (servicios.includes('cirugia')) {
+        if (esCirugiaEspecializada) {
+          documents.formasAseguradora.push({ key: 'formatoCirugiaEspecializada', name: 'Formato de Cirugía de Traumatología, Ortopedia y Neurocirugía', required: true });
+        }
+      }
+      if (servicios.includes('medicamentos')) {
+        documents.documentosSiniestro.push({ key: 'recetaMedicamentos', name: 'Recetas de Medicamentos', required: true });
+      }
+      if (servicios.includes('rehabilitacion')) {
+        documents.documentosSiniestro.push({ key: 'bitacoraMedico', name: 'Bitácora del Médico (incluyendo número de terapias, sesiones y duración)', required: true });
+      }
+    } else if (tipoReclamo === 'maternidad') {
+      // Documentos para maternidad
+      documents.formasAseguradora = [
+        { key: 'avisoAccidente', name: 'Aviso de Accidente o Enfermedad', required: true },
+        { key: 'informeMedico', name: 'Informe Médico', required: true },
+      ];
+
+      documents.informacionPersonal = [
+        { key: 'identificacionAsegurado', name: 'Identificación Oficial del Asegurado', required: true }
+      ];
+    }
+
+    return documents;
   };
 
   const handleSendStatus = async () => {
@@ -83,13 +181,16 @@ const AdminClaimDetail = () => {
   };
 
   const handleCommentChange = (documentType, value) => {
-    setDocumentComments(prev => ({ ...prev, [documentType]: value }));
+    setDocumentComments(prev => ({
+      ...prev,
+      [documentType]: value
+    }));
   };
 
   const handleDocumentStatus = async (documentType, status) => {
     setProcessingDocId(documentType);
     const comments = documentComments[documentType] || '';
-    
+
     // Si es rechazado y no hay comentarios, solicitar comentarios
     if (status === 'rejected' && comments.trim() === '') {
       toast.error('Debes agregar un comentario para rechazar el documento');
@@ -101,26 +202,39 @@ const AdminClaimDetail = () => {
     try {
       await claimsService.updateDocumentStatus(claimId, documentType, status, comments);
       await loadDocuments(claimId);
-      
+
       // Check if all documents are now approved to update claim status
       if (status === 'approved') {
         const updatedDocs = await claimsService.getClaimDocuments(claimId);
         const allDocsApproved = Object.values(updatedDocs).every(
           doc => doc.status === 'approved'
         );
-        
         if (allDocsApproved && Object.keys(updatedDocs).length > 0) {
           await updateClaimStatus(claimId, 'verified');
           toast.success('Todos los documentos aprobados. Reclamo verificado.');
         }
       }
-      
+
       toast.success(`Documento ${status === 'approved' ? 'aprobado' : (status === 'rejected' ? 'rechazado' : 'pendiente')} correctamente`);
     } catch (error) {
       toast.error('Error al actualizar el estado del documento');
       console.error('Document status update error:', error);
     } finally {
       setProcessingDocId(null);
+    }
+  };
+
+  const handleFileUpload = async (file, documentType) => {
+    setLoading(true);
+    try {
+      await claimsService.uploadDocument(claimId, documentType, file);
+      toast.success('Documento subido correctamente');
+      await loadDocuments(claimId);
+    } catch (error) {
+      toast.error('Error al subir el documento');
+      console.error('Upload error:', error);
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -164,6 +278,15 @@ const AdminClaimDetail = () => {
     }
   };
 
+  const getStatusIcon = (status) => {
+    switch (status) {
+      case 'approved': return FiCheckCircle;
+      case 'rejected': return FiXCircle;
+      case 'under-review': return FiClock;
+      default: return FiFileText;
+    }
+  };
+
   const handleDownloadFile = (fileUrl, fileName) => {
     const link = document.createElement('a');
     link.href = fileUrl;
@@ -188,6 +311,13 @@ const AdminClaimDetail = () => {
 
   const claimNumber = claim.id?.replace('claim-', '').toUpperCase();
   const isInInsurer = claim.status === 'sent-to-insurer';
+  const requiredDocumentsMap = getRequiredDocuments(
+    claim.tipoReclamo,
+    claim.tipoSiniestro,
+    claim.tipoServicioReembolso,
+    claim.tipoServicioProgramacion,
+    claim.esCirugiaEspecializada
+  );
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -227,16 +357,14 @@ const AdminClaimDetail = () => {
                     ? 'bg-red-600 hover:bg-red-700 text-white'
                     : 'bg-fortex-primary hover:bg-fortex-secondary text-white'
                 }`}
-                style={isInInsurer ? {backgroundColor: '#e33333'} : {}}
+                style={isInInsurer ? { backgroundColor: '#e33333' } : {}}
               >
-                <SafeIcon
-                  icon={isInInsurer ? FiArchive : FiSend}
-                  className="w-4 h-4"
-                />
+                <SafeIcon icon={isInInsurer ? FiArchive : FiSend} className="w-4 h-4" />
                 <span>
                   {loading || sendingStatus
                     ? (isInInsurer ? 'Archivando...' : 'Enviando...')
-                    : (isInInsurer ? 'Archivar Tarjeta' : 'Enviar Estatus al Asegurado')}
+                    : (isInInsurer ? 'Archivar Tarjeta' : 'Enviar Estatus al Asegurado')
+                  }
                 </span>
               </button>
             </div>
@@ -286,7 +414,6 @@ const AdminClaimDetail = () => {
                     </p>
                   </div>
                 </div>
-
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">
                     Relación con el Asegurado
@@ -306,9 +433,9 @@ const AdminClaimDetail = () => {
                       type="text"
                       value={claim.numeroReclamoAseguradora || ''}
                       onChange={(e) => {
-                        const updatedClaim = {...claim, numeroReclamoAseguradora: e.target.value};
+                        const updatedClaim = { ...claim, numeroReclamoAseguradora: e.target.value };
                         setClaim(updatedClaim);
-                        claimsService.updateClaim(claimId, {numeroReclamoAseguradora: e.target.value});
+                        claimsService.updateClaim(claimId, { numeroReclamoAseguradora: e.target.value });
                       }}
                       className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-fortex-primary focus:border-transparent"
                       placeholder="Ingrese el número proporcionado por la aseguradora"
@@ -413,111 +540,285 @@ const AdminClaimDetail = () => {
               </button>
             </div>
             <div className="p-6">
-              {Object.keys(documents).length > 0 ? (
-                <div className="overflow-x-auto">
-                  <table className="min-w-full divide-y divide-gray-200">
-                    <thead className="bg-gray-50">
-                      <tr>
-                        <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                          Tipo de Documento
-                        </th>
-                        <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                          Estado
-                        </th>
-                        <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                          Archivos
-                        </th>
-                        <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                          Acciones
-                        </th>
-                        <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                          Comentarios para el Asegurado
-                        </th>
-                      </tr>
-                    </thead>
-                    <tbody className="bg-white divide-y divide-gray-200">
-                      {Object.entries(documents).map(([docType, docInfo]) => (
-                        <tr key={docType}>
-                          <td className="px-6 py-4 whitespace-nowrap">
-                            <div className="text-sm font-medium text-gray-900">{getDocumentTypeLabel(docType)}</div>
-                          </td>
-                          <td className="px-6 py-4 whitespace-nowrap">
-                            <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${getStatusColor(docInfo.status)}`}>
-                              {getStatusText(docInfo.status)}
-                            </span>
-                          </td>
-                          <td className="px-6 py-4">
-                            <div className="space-y-2">
-                              {docInfo.files && docInfo.files.map((file, idx) => (
-                                <div key={idx} className="flex items-center space-x-2 text-sm">
-                                  <SafeIcon icon={FiFileText} className="w-4 h-4 text-gray-500" />
-                                  <a
-                                    href={file.url}
-                                    target="_blank"
-                                    rel="noreferrer"
-                                    className="text-fortex-primary hover:text-fortex-secondary truncate max-w-xs"
-                                  >
-                                    {file.name}
-                                  </a>
+              {/* Sección: Formas de la Aseguradora */}
+              {requiredDocumentsMap.formasAseguradora.length > 0 && (
+                <div className="mb-8">
+                  <div className="flex items-center mb-4">
+                    <div className="h-px bg-fortex-primary flex-1"></div>
+                    <h4 className="text-lg font-semibold text-fortex-primary mx-4">Formas de la Aseguradora</h4>
+                    <div className="h-px bg-fortex-primary flex-1"></div>
+                  </div>
+                  <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                    {requiredDocumentsMap.formasAseguradora.map((docType) => {
+                      const status = documents[docType.key]?.status || 'pending';
+                      const doc = documents[docType.key];
+                      return (
+                        <div key={docType.key} className="bg-gray-50 rounded-lg p-4 border border-gray-200">
+                          <div className="flex items-center justify-between mb-4">
+                            <h5 className="font-medium text-gray-900">{docType.name}</h5>
+                            <div className={`flex items-center space-x-2 px-3 py-1 rounded-full text-xs font-medium ${getStatusColor(status)}`}>
+                              <SafeIcon icon={getStatusIcon(status)} className="w-4 h-4" />
+                              <span>{getStatusText(status)}</span>
+                            </div>
+                          </div>
+                          
+                          {/* Upload Zone */}
+                          <div className="mb-4">
+                            <DocumentUploadZone
+                              onFileUpload={(file) => handleFileUpload(file, docType.key)}
+                              documentType={docType.key}
+                              acceptedFiles={doc?.files || []}
+                            />
+                          </div>
+
+                          {/* File List */}
+                          {doc && doc.files && doc.files.length > 0 && (
+                            <div className="space-y-2 mb-4">
+                              {doc.files.map((file, index) => (
+                                <div key={index} className="flex items-center justify-between p-2 bg-white rounded border">
+                                  <div className="flex items-center space-x-2">
+                                    <SafeIcon icon={FiFileText} className="w-4 h-4 text-fortex-primary" />
+                                    <span className="text-sm font-medium">{file.name}</span>
+                                  </div>
                                   <button
                                     onClick={() => handleDownloadFile(file.url, file.name)}
-                                    className="text-gray-400 hover:text-gray-600 cursor-pointer"
+                                    className="text-fortex-primary hover:text-fortex-secondary"
                                   >
                                     <SafeIcon icon={FiDownload} className="w-4 h-4" />
                                   </button>
                                 </div>
                               ))}
                             </div>
-                          </td>
-                          <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium space-x-2">
+                          )}
+
+                          {/* Status Actions */}
+                          <div className="flex space-x-2 mb-3">
                             <button
-                              onClick={() => handleDocumentStatus(docType, 'approved')}
-                              disabled={processingDocId === docType}
-                              className={`inline-flex items-center px-3 py-1 rounded-md text-sm transition-colors ${
-                                docInfo.status === 'approved'
+                              onClick={() => handleDocumentStatus(docType.key, 'approved')}
+                              disabled={processingDocId === docType.key}
+                              className={`flex-1 px-3 py-2 rounded text-sm font-medium transition-colors ${
+                                status === 'approved'
                                   ? 'bg-green-100 text-green-700'
                                   : 'bg-gray-100 text-gray-700 hover:bg-green-100 hover:text-green-700'
                               }`}
                             >
-                              <SafeIcon icon={FiCheckCircle} className="w-4 h-4 mr-1" />
-                              Aprobado
+                              <SafeIcon icon={FiCheckCircle} className="w-4 h-4 mx-auto" />
                             </button>
                             <button
-                              onClick={() => handleDocumentStatus(docType, 'rejected')}
-                              disabled={processingDocId === docType}
-                              className={`inline-flex items-center px-3 py-1 rounded-md text-sm transition-colors ${
-                                docInfo.status === 'rejected'
+                              onClick={() => handleDocumentStatus(docType.key, 'rejected')}
+                              disabled={processingDocId === docType.key}
+                              className={`flex-1 px-3 py-2 rounded text-sm font-medium transition-colors ${
+                                status === 'rejected'
                                   ? 'bg-red-100 text-red-700'
                                   : 'bg-gray-100 text-gray-700 hover:bg-red-100 hover:text-red-700'
                               }`}
-                              style={docInfo.status === 'rejected' ? {backgroundColor: '#fee2e2', color: '#b91c1c'} : {}}
                             >
-                              <SafeIcon icon={FiXCircle} className="w-4 h-4 mr-1" />
-                              Rechazado
+                              <SafeIcon icon={FiXCircle} className="w-4 h-4 mx-auto" />
                             </button>
-                          </td>
-                          <td className="px-6 py-4">
+                          </div>
+
+                          {/* Comments */}
+                          <div>
                             <textarea
-                              value={documentComments[docType] || ''}
-                              onChange={(e) => handleCommentChange(docType, e.target.value)}
+                              value={documentComments[docType.key] || ''}
+                              onChange={(e) => handleCommentChange(docType.key, e.target.value)}
                               placeholder="Comentarios para el asegurado..."
-                              className="w-full px-2 py-1 text-sm border border-gray-300 rounded focus:ring-2 focus:ring-fortex-primary focus:border-transparent"
+                              className="w-full px-3 py-2 text-sm border border-gray-300 rounded focus:ring-2 focus:ring-fortex-primary focus:border-transparent"
                               rows={2}
                             />
-                            <div className="text-xs text-gray-500 mt-1">
-                              {documentComments[docType]?.trim() === '' && 'El documento quedará como "Pendiente" sin comentarios'}
-                            </div>
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
                 </div>
-              ) : (
-                <div className="text-center py-8 text-gray-500">
-                  <SafeIcon icon={FiFileText} className="w-12 h-12 mx-auto mb-2" />
-                  <p>No hay documentos subidos para este reclamo</p>
-                  <p className="text-sm">Documentos subidos: {claim.documentsCount || 0}</p>
+              )}
+
+              {/* Sección: Información Personal */}
+              {requiredDocumentsMap.informacionPersonal.length > 0 && (
+                <div className="mb-8">
+                  <div className="flex items-center mb-4">
+                    <div className="h-px bg-fortex-secondary flex-1"></div>
+                    <h4 className="text-lg font-semibold text-fortex-secondary mx-4">Información Personal</h4>
+                    <div className="h-px bg-fortex-secondary flex-1"></div>
+                  </div>
+                  <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                    {requiredDocumentsMap.informacionPersonal.map((docType) => {
+                      const status = documents[docType.key]?.status || 'pending';
+                      const doc = documents[docType.key];
+                      return (
+                        <div key={docType.key} className="bg-blue-50 rounded-lg p-4 border border-blue-200">
+                          <div className="flex items-center justify-between mb-4">
+                            <h5 className="font-medium text-gray-900">{docType.name}</h5>
+                            <div className={`flex items-center space-x-2 px-3 py-1 rounded-full text-xs font-medium ${getStatusColor(status)}`}>
+                              <SafeIcon icon={getStatusIcon(status)} className="w-4 h-4" />
+                              <span>{getStatusText(status)}</span>
+                            </div>
+                          </div>
+                          
+                          {/* Upload Zone */}
+                          <div className="mb-4">
+                            <DocumentUploadZone
+                              onFileUpload={(file) => handleFileUpload(file, docType.key)}
+                              documentType={docType.key}
+                              acceptedFiles={doc?.files || []}
+                            />
+                          </div>
+
+                          {/* File List */}
+                          {doc && doc.files && doc.files.length > 0 && (
+                            <div className="space-y-2 mb-4">
+                              {doc.files.map((file, index) => (
+                                <div key={index} className="flex items-center justify-between p-2 bg-white rounded border">
+                                  <div className="flex items-center space-x-2">
+                                    <SafeIcon icon={FiFileText} className="w-4 h-4 text-fortex-primary" />
+                                    <span className="text-sm font-medium">{file.name}</span>
+                                  </div>
+                                  <button
+                                    onClick={() => handleDownloadFile(file.url, file.name)}
+                                    className="text-fortex-primary hover:text-fortex-secondary"
+                                  >
+                                    <SafeIcon icon={FiDownload} className="w-4 h-4" />
+                                  </button>
+                                </div>
+                              ))}
+                            </div>
+                          )}
+
+                          {/* Status Actions */}
+                          <div className="flex space-x-2 mb-3">
+                            <button
+                              onClick={() => handleDocumentStatus(docType.key, 'approved')}
+                              disabled={processingDocId === docType.key}
+                              className={`flex-1 px-3 py-2 rounded text-sm font-medium transition-colors ${
+                                status === 'approved'
+                                  ? 'bg-green-100 text-green-700'
+                                  : 'bg-gray-100 text-gray-700 hover:bg-green-100 hover:text-green-700'
+                              }`}
+                            >
+                              <SafeIcon icon={FiCheckCircle} className="w-4 h-4 mx-auto" />
+                            </button>
+                            <button
+                              onClick={() => handleDocumentStatus(docType.key, 'rejected')}
+                              disabled={processingDocId === docType.key}
+                              className={`flex-1 px-3 py-2 rounded text-sm font-medium transition-colors ${
+                                status === 'rejected'
+                                  ? 'bg-red-100 text-red-700'
+                                  : 'bg-gray-100 text-gray-700 hover:bg-red-100 hover:text-red-700'
+                              }`}
+                            >
+                              <SafeIcon icon={FiXCircle} className="w-4 h-4 mx-auto" />
+                            </button>
+                          </div>
+
+                          {/* Comments */}
+                          <div>
+                            <textarea
+                              value={documentComments[docType.key] || ''}
+                              onChange={(e) => handleCommentChange(docType.key, e.target.value)}
+                              placeholder="Comentarios para el asegurado..."
+                              className="w-full px-3 py-2 text-sm border border-gray-300 rounded focus:ring-2 focus:ring-fortex-primary focus:border-transparent"
+                              rows={2}
+                            />
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
+
+              {/* Sección: Documentos del Siniestro */}
+              {requiredDocumentsMap.documentosSiniestro.length > 0 && (
+                <div className="mb-8">
+                  <div className="flex items-center mb-4">
+                    <div className="h-px bg-orange-400 flex-1"></div>
+                    <h4 className="text-lg font-semibold text-orange-600 mx-4">Documentos del Siniestro</h4>
+                    <div className="h-px bg-orange-400 flex-1"></div>
+                  </div>
+                  <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                    {requiredDocumentsMap.documentosSiniestro.map((docType) => {
+                      const status = documents[docType.key]?.status || 'pending';
+                      const doc = documents[docType.key];
+                      return (
+                        <div key={docType.key} className="bg-orange-50 rounded-lg p-4 border border-orange-200">
+                          <div className="flex items-center justify-between mb-4">
+                            <h5 className="font-medium text-gray-900">{docType.name}</h5>
+                            <div className={`flex items-center space-x-2 px-3 py-1 rounded-full text-xs font-medium ${getStatusColor(status)}`}>
+                              <SafeIcon icon={getStatusIcon(status)} className="w-4 h-4" />
+                              <span>{getStatusText(status)}</span>
+                            </div>
+                          </div>
+                          
+                          {/* Upload Zone */}
+                          <div className="mb-4">
+                            <DocumentUploadZone
+                              onFileUpload={(file) => handleFileUpload(file, docType.key)}
+                              documentType={docType.key}
+                              acceptedFiles={doc?.files || []}
+                            />
+                          </div>
+
+                          {/* File List */}
+                          {doc && doc.files && doc.files.length > 0 && (
+                            <div className="space-y-2 mb-4">
+                              {doc.files.map((file, index) => (
+                                <div key={index} className="flex items-center justify-between p-2 bg-white rounded border">
+                                  <div className="flex items-center space-x-2">
+                                    <SafeIcon icon={FiFileText} className="w-4 h-4 text-fortex-primary" />
+                                    <span className="text-sm font-medium">{file.name}</span>
+                                  </div>
+                                  <button
+                                    onClick={() => handleDownloadFile(file.url, file.name)}
+                                    className="text-fortex-primary hover:text-fortex-secondary"
+                                  >
+                                    <SafeIcon icon={FiDownload} className="w-4 h-4" />
+                                  </button>
+                                </div>
+                              ))}
+                            </div>
+                          )}
+
+                          {/* Status Actions */}
+                          <div className="flex space-x-2 mb-3">
+                            <button
+                              onClick={() => handleDocumentStatus(docType.key, 'approved')}
+                              disabled={processingDocId === docType.key}
+                              className={`flex-1 px-3 py-2 rounded text-sm font-medium transition-colors ${
+                                status === 'approved'
+                                  ? 'bg-green-100 text-green-700'
+                                  : 'bg-gray-100 text-gray-700 hover:bg-green-100 hover:text-green-700'
+                              }`}
+                            >
+                              <SafeIcon icon={FiCheckCircle} className="w-4 h-4 mx-auto" />
+                            </button>
+                            <button
+                              onClick={() => handleDocumentStatus(docType.key, 'rejected')}
+                              disabled={processingDocId === docType.key}
+                              className={`flex-1 px-3 py-2 rounded text-sm font-medium transition-colors ${
+                                status === 'rejected'
+                                  ? 'bg-red-100 text-red-700'
+                                  : 'bg-gray-100 text-gray-700 hover:bg-red-100 hover:text-red-700'
+                              }`}
+                            >
+                              <SafeIcon icon={FiXCircle} className="w-4 h-4 mx-auto" />
+                            </button>
+                          </div>
+
+                          {/* Comments */}
+                          <div>
+                            <textarea
+                              value={documentComments[docType.key] || ''}
+                              onChange={(e) => handleCommentChange(docType.key, e.target.value)}
+                              placeholder="Comentarios para el asegurado..."
+                              className="w-full px-3 py-2 text-sm border border-gray-300 rounded focus:ring-2 focus:ring-fortex-primary focus:border-transparent"
+                              rows={2}
+                            />
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
                 </div>
               )}
             </div>

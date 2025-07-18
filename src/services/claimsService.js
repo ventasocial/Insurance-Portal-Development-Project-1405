@@ -2,19 +2,29 @@ import supabase from '../lib/supabase';
 
 // Generate a random 4-character alphanumeric string
 const generateClaimCode = () => {
-  const characters = 'abcdefghijklmnopqrstuvwxyz0123456789';
+  const characters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
   let result = '';
   for (let i = 0; i < 4; i++) {
     result += characters.charAt(Math.floor(Math.random() * characters.length));
   }
-  return result.toUpperCase();
+  return result;
 };
 
 // Helper function to format claim data from Supabase
 const formatClaimData = (claim) => {
   if (!claim) return null;
+  
+  // Generate short ID if it's a UUID
+  let claimId = claim.id;
+  if (claim.id && claim.id.includes('-') && claim.id.length > 10) {
+    // If it's a UUID, create a short readable ID
+    claimId = `claim-${generateClaimCode()}`;
+  } else if (!claim.id) {
+    claimId = `claim-${generateClaimCode()}`;
+  }
+  
   return {
-    id: claim.id || `claim-${generateClaimCode().toLowerCase()}`,
+    id: claimId,
     contactId: claim.contact_id,
     firstName: claim.first_name,
     lastName: claim.last_name,
@@ -46,6 +56,7 @@ const formatClaimData = (claim) => {
 // Helper function to format data for Supabase
 const formatForSupabase = (claimData) => {
   return {
+    id: claimData.id || `claim-${generateClaimCode()}`,
     contact_id: claimData.contactId || 'demo-contact-456',
     first_name: claimData.firstName,
     last_name: claimData.lastName,
@@ -75,7 +86,7 @@ const formatForSupabase = (claimData) => {
 // Demo data for claims
 const demoClaims = [
   {
-    id: 'claim-abcd',
+    id: 'claim-ABCD',
     contactId: 'demo-contact-456',
     firstName: 'Juan',
     lastName: 'Pérez',
@@ -98,7 +109,7 @@ const demoClaims = [
     numeroReclamoAseguradora: 'R-12345'
   },
   {
-    id: 'claim-efgh',
+    id: 'claim-EFGH',
     contactId: 'demo-contact-456',
     firstName: 'Juan',
     lastName: 'Pérez',
@@ -121,7 +132,7 @@ const demoClaims = [
     numeroReclamoAseguradora: 'R-67890'
   },
   {
-    id: 'claim-ijkl',
+    id: 'claim-IJKL',
     contactId: 'demo-contact-456',
     firstName: 'Juan',
     lastName: 'Pérez',
@@ -147,7 +158,7 @@ const demoClaims = [
 
 // Mock documents data
 const mockDocuments = {
-  'claim-abcd': {
+  'claim-ABCD': {
     avisoAccidente: {
       status: 'approved',
       files: [
@@ -287,7 +298,7 @@ export const claimsService = {
       console.error('Error creating claim:', error);
       // Fallback to create a mock claim
       const newClaim = {
-        id: `claim-${generateClaimCode().toLowerCase()}`,
+        id: `claim-${generateClaimCode()}`,
         contactId: claimData.contactId || 'demo-contact-456',
         ...claimData,
         status: 'pending',

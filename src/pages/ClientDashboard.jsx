@@ -54,7 +54,7 @@ const ClientDashboard = () => {
       tipoSiniestro: 'complemento',
       numeroReclamo: claim.numeroReclamoAseguradora || ''
     };
-    
+
     // Establecer los datos para el nuevo reclamo y abrir el modal
     setNewClaimData(complementoData);
     setShowNewClaimModal(true);
@@ -73,27 +73,26 @@ const ClientDashboard = () => {
   // Filtrar reclamos
   const filteredClaims = claims.filter(claim => {
     // Filtro de búsqueda por texto
-    const matchesSearch = 
-      searchTerm === '' || 
+    const matchesSearch = searchTerm === '' ||
       claim.nombreAsegurado?.toLowerCase().includes(searchTerm.toLowerCase()) ||
       claim.email?.toLowerCase().includes(searchTerm.toLowerCase()) ||
       claim.numeroPoliza?.toLowerCase().includes(searchTerm.toLowerCase()) ||
       claim.aseguradora?.toLowerCase().includes(searchTerm.toLowerCase()) ||
       (claim.numeroReclamoAseguradora && claim.numeroReclamoAseguradora.toLowerCase().includes(searchTerm.toLowerCase())) ||
       (claim.numeroReclamo && claim.numeroReclamo.toLowerCase().includes(searchTerm.toLowerCase()));
-    
+
     // Filtro de estado
     const matchesStatus = !filters.status || claim.status === filters.status;
-    
+
     // Filtro de tipo de reclamo
     const matchesTipoReclamo = !filters.tipoReclamo || claim.tipoReclamo === filters.tipoReclamo;
-    
+
     // Filtro de aseguradora
     const matchesAseguradora = !filters.aseguradora || claim.aseguradora === filters.aseguradora;
-    
+
     // Filtro de fecha
     const matchesDate = !filters.date || new Date(claim.createdAt) >= new Date(filters.date);
-    
+
     return matchesSearch && matchesStatus && matchesTipoReclamo && matchesAseguradora && matchesDate;
   });
 
@@ -153,15 +152,11 @@ const ClientDashboard = () => {
                     <option value="">Todos</option>
                     {statusOptions.map(status => (
                       <option key={status} value={status}>
-                        {status === 'pending' 
-                          ? 'Pendiente'
-                          : status === 'verified' 
-                            ? 'Aprobado'
-                            : status === 'rejected' 
-                              ? 'Rechazado'
-                              : status === 'sent-to-insurer' 
-                                ? 'Enviado a Aseguradora'
-                                : capitalizeFirstLetter(status)}
+                        {status === 'pending' ? 'Pendiente' :
+                         status === 'verified' ? 'Aprobado' :
+                         status === 'rejected' ? 'Rechazado' :
+                         status === 'sent-to-insurer' ? 'Enviado a Aseguradora' :
+                         capitalizeFirstLetter(status)}
                       </option>
                     ))}
                   </select>
@@ -212,10 +207,7 @@ const ClientDashboard = () => {
                 <div className="flex flex-col space-y-2">
                   <label className="text-sm font-medium text-gray-700">Buscar</label>
                   <div className="relative">
-                    <SafeIcon
-                      icon={FiSearch}
-                      className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5"
-                    />
+                    <SafeIcon icon={FiSearch} className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
                     <input
                       type="text"
                       placeholder="Buscar por nombre, email, póliza o número de reclamo..."
@@ -255,7 +247,7 @@ const ClientDashboard = () => {
                       Estado
                     </th>
                     <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Fecha de Creación
+                      Creado
                     </th>
                     <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                       Acciones
@@ -265,72 +257,64 @@ const ClientDashboard = () => {
                 <tbody className="bg-white divide-y divide-gray-200">
                   {filteredClaims.map((claim) => (
                     <tr key={claim.id} className="hover:bg-gray-50 cursor-pointer">
-                      <td 
+                      <td
                         className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900"
                         onClick={() => window.location.href = `#/claim/${claim.id}`}
                       >
                         R-{claim.id.replace('claim-', '').toUpperCase()}
                       </td>
-                      <td 
+                      <td
                         className="px-6 py-4 whitespace-nowrap text-sm text-gray-500"
                         onClick={() => window.location.href = `#/claim/${claim.id}`}
                       >
                         {claim.nombreAsegurado}
                       </td>
-                      <td 
+                      <td
                         className="px-6 py-4 whitespace-nowrap text-sm text-gray-500"
                         onClick={() => window.location.href = `#/claim/${claim.id}`}
                       >
                         {claim.numeroPoliza}
                       </td>
-                      <td 
+                      <td
                         className="px-6 py-4 whitespace-nowrap text-sm text-gray-500"
                         onClick={() => window.location.href = `#/claim/${claim.id}`}
                       >
                         {claim.numeroReclamoAseguradora || claim.numeroReclamo || '-'}
                       </td>
-                      <td 
+                      <td
                         className="px-6 py-4 whitespace-nowrap text-sm text-gray-500"
                         onClick={() => window.location.href = `#/claim/${claim.id}`}
                       >
                         {claim.aseguradora}
                       </td>
-                      <td 
+                      <td
                         className="px-6 py-4 whitespace-nowrap text-sm text-gray-500"
                         onClick={() => window.location.href = `#/claim/${claim.id}`}
                       >
                         {capitalizeFirstLetter(claim.tipoReclamo)}
-                        {claim.tipoReclamo === 'reembolso' && claim.tipoSiniestro && 
+                        {claim.tipoReclamo === 'reembolso' && claim.tipoSiniestro && (
                           <span className="ml-1 text-xs">({capitalizeFirstLetter(claim.tipoSiniestro)})</span>
-                        }
+                        )}
                       </td>
-                      <td 
+                      <td
                         className="px-6 py-4 whitespace-nowrap"
                         onClick={() => window.location.href = `#/claim/${claim.id}`}
                       >
                         <span className={`px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full ${
-                          claim.status === 'pending' 
-                            ? 'bg-yellow-100 text-yellow-800'
-                            : claim.status === 'verified' 
-                              ? 'bg-green-100 text-green-800'
-                              : claim.status === 'rejected' 
-                                ? 'bg-red-100 text-red-800'
-                                : claim.status === 'sent-to-insurer' 
-                                  ? 'bg-blue-100 text-blue-800'
-                                  : 'bg-gray-100 text-gray-800'
+                          claim.status === 'pending' ? 'bg-yellow-100 text-yellow-800' :
+                          claim.status === 'verified' ? 'bg-green-100 text-green-800' :
+                          claim.status === 'rejected' ? 'bg-red-100 text-red-800' :
+                          claim.status === 'sent-to-insurer' ? 'bg-blue-100 text-blue-800' :
+                          'bg-gray-100 text-gray-800'
                         }`}>
-                          {claim.status === 'pending' 
-                            ? 'Pendiente'
-                            : claim.status === 'verified' 
-                              ? 'Aprobado'
-                              : claim.status === 'rejected' 
-                                ? 'Rechazado'
-                                : claim.status === 'sent-to-insurer' 
-                                  ? 'Enviado'
-                                  : capitalizeFirstLetter(claim.status)}
+                          {claim.status === 'pending' ? 'Pendiente' :
+                           claim.status === 'verified' ? 'Aprobado' :
+                           claim.status === 'rejected' ? 'Rechazado' :
+                           claim.status === 'sent-to-insurer' ? 'Enviado' :
+                           capitalizeFirstLetter(claim.status)}
                         </span>
                       </td>
-                      <td 
+                      <td
                         className="px-6 py-4 whitespace-nowrap text-sm text-gray-500"
                         onClick={() => window.location.href = `#/claim/${claim.id}`}
                       >

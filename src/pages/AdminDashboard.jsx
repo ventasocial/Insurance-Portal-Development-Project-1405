@@ -41,9 +41,12 @@ const AdminDashboard = () => {
 
   // Calculate average processing time (in days)
   const calculateAvgProcessingTime = () => {
-    const archivedClaims = claims.filter(claim => claim.status === 'archived' && claim.createdAt && claim.updatedAt);
+    const archivedClaims = claims.filter(claim => 
+      claim.status === 'archived' && claim.createdAt && claim.updatedAt
+    );
+    
     if (archivedClaims.length === 0) return 'N/A';
-
+    
     const totalDays = archivedClaims.reduce((sum, claim) => {
       const createdDate = new Date(claim.createdAt);
       const updatedDate = new Date(claim.updatedAt);
@@ -51,7 +54,7 @@ const AdminDashboard = () => {
       const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
       return sum + diffDays;
     }, 0);
-
+    
     return (totalDays / archivedClaims.length).toFixed(1);
   };
 
@@ -60,7 +63,7 @@ const AdminDashboard = () => {
       claim.status === status && 
       claim.status !== 'archived' && // Don't show archived claims
       (
-        searchTerm === '' || 
+        searchTerm === '' ||
         claim.nombreAsegurado?.toLowerCase().includes(searchTerm.toLowerCase()) ||
         claim.email?.toLowerCase().includes(searchTerm.toLowerCase()) ||
         claim.numeroPoliza?.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -108,6 +111,7 @@ const AdminDashboard = () => {
         if (typeof fieldValue === 'string') {
           fieldValue = fieldValue.toLowerCase();
         }
+        
         const filterValue = filter.value.toLowerCase();
         const matches = fieldValue && fieldValue.includes(filterValue);
         return filter.include ? matches : !matches;
@@ -248,7 +252,9 @@ const AdminDashboard = () => {
                 <button
                   onClick={() => setViewMode('kanban')}
                   className={`px-3 py-2 rounded-lg flex items-center ${
-                    viewMode === 'kanban' ? 'bg-fortex-primary text-white' : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                    viewMode === 'kanban'
+                      ? 'bg-fortex-primary text-white'
+                      : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
                   }`}
                 >
                   <SafeIcon icon={FiFilter} className="w-4 h-4 mr-2" />
@@ -257,7 +263,9 @@ const AdminDashboard = () => {
                 <button
                   onClick={() => setViewMode('table')}
                   className={`px-3 py-2 rounded-lg flex items-center ${
-                    viewMode === 'table' ? 'bg-fortex-primary text-white' : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                    viewMode === 'table'
+                      ? 'bg-fortex-primary text-white'
+                      : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
                   }`}
                 >
                   <SafeIcon icon={FiList} className="w-4 h-4 mr-2" />
@@ -266,10 +274,7 @@ const AdminDashboard = () => {
               </div>
               <div className="flex-1 sm:ml-4">
                 <div className="relative">
-                  <SafeIcon
-                    icon={FiSearch}
-                    className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5"
-                  />
+                  <SafeIcon icon={FiSearch} className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
                   <input
                     type="text"
                     placeholder="Buscar por nombre, email, póliza, aseguradora o número de reclamo..."
@@ -305,19 +310,16 @@ const AdminDashboard = () => {
                   <option value="">Todos</option>
                   {statusOptions.map(status => (
                     <option key={status} value={status}>
-                      {status === 'pending' 
-                        ? 'Pendiente' 
-                        : status === 'verified' 
-                          ? 'Aprobado' 
-                          : status === 'sent-to-insurer' 
-                            ? 'Enviado a Aseguradora' 
-                            : status === 'rejected' 
-                              ? 'Rechazado' 
-                              : capitalizeFirstLetter(status)}
+                      {status === 'pending' ? 'Pendiente' :
+                       status === 'verified' ? 'Aprobado' :
+                       status === 'sent-to-insurer' ? 'Enviado a Aseguradora' :
+                       status === 'rejected' ? 'Rechazado' :
+                       capitalizeFirstLetter(status)}
                     </option>
                   ))}
                 </select>
               </div>
+
               <div className="flex flex-col space-y-2">
                 <div className="flex items-center justify-between">
                   <label className="text-sm font-medium text-gray-700">
@@ -343,6 +345,7 @@ const AdminDashboard = () => {
                   ))}
                 </select>
               </div>
+
               <div className="flex flex-col space-y-2">
                 <div className="flex items-center justify-between">
                   <label className="text-sm font-medium text-gray-700">
@@ -368,6 +371,7 @@ const AdminDashboard = () => {
                   ))}
                 </select>
               </div>
+
               <div className="flex flex-col space-y-2">
                 <div className="flex items-center justify-between">
                   <label className="text-sm font-medium text-gray-700">
@@ -390,6 +394,7 @@ const AdminDashboard = () => {
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-fortex-primary focus:border-transparent"
                 />
               </div>
+
               <div className="flex flex-col space-y-2">
                 <div className="flex items-center justify-between">
                   <label className="text-sm font-medium text-gray-700">
@@ -443,7 +448,7 @@ const AdminDashboard = () => {
                         Estado
                       </th>
                       <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        Fecha de Creación
+                        Creado
                       </th>
                       <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                         Acciones
@@ -452,10 +457,7 @@ const AdminDashboard = () => {
                   </thead>
                   <tbody className="bg-white divide-y divide-gray-200">
                     {tableFilteredClaims.map((claim) => (
-                      <tr
-                        key={claim.id}
-                        className="hover:bg-gray-50 cursor-pointer"
-                      >
+                      <tr key={claim.id} className="hover:bg-gray-50 cursor-pointer">
                         <td
                           className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900"
                           onClick={() => window.location.href = `#/admin/claim/${claim.id}`}
@@ -491,34 +493,26 @@ const AdminDashboard = () => {
                           onClick={() => window.location.href = `#/admin/claim/${claim.id}`}
                         >
                           {capitalizeFirstLetter(claim.tipoReclamo)}
-                          {claim.tipoReclamo === 'reembolso' && claim.tipoSiniestro && 
+                          {claim.tipoReclamo === 'reembolso' && claim.tipoSiniestro && (
                             <span className="ml-1 text-xs">({capitalizeFirstLetter(claim.tipoSiniestro)})</span>
-                          }
+                          )}
                         </td>
                         <td
                           className="px-6 py-4 whitespace-nowrap"
                           onClick={() => window.location.href = `#/admin/claim/${claim.id}`}
                         >
                           <span className={`px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full ${
-                            claim.status === 'pending' 
-                              ? 'bg-yellow-100 text-yellow-800'
-                              : claim.status === 'verified' 
-                                ? 'bg-green-100 text-green-800'
-                                : claim.status === 'rejected' 
-                                  ? 'bg-red-100 text-red-800'
-                                  : claim.status === 'sent-to-insurer' 
-                                    ? 'bg-blue-100 text-blue-800'
-                                    : 'bg-gray-100 text-gray-800'
+                            claim.status === 'pending' ? 'bg-yellow-100 text-yellow-800' :
+                            claim.status === 'verified' ? 'bg-green-100 text-green-800' :
+                            claim.status === 'rejected' ? 'bg-red-100 text-red-800' :
+                            claim.status === 'sent-to-insurer' ? 'bg-blue-100 text-blue-800' :
+                            'bg-gray-100 text-gray-800'
                           }`}>
-                            {claim.status === 'pending' 
-                              ? 'Pendiente'
-                              : claim.status === 'verified' 
-                                ? 'Aprobado'
-                                : claim.status === 'rejected' 
-                                  ? 'Rechazado'
-                                  : claim.status === 'sent-to-insurer' 
-                                    ? 'Enviado'
-                                    : capitalizeFirstLetter(claim.status)}
+                            {claim.status === 'pending' ? 'Pendiente' :
+                             claim.status === 'verified' ? 'Aprobado' :
+                             claim.status === 'rejected' ? 'Rechazado' :
+                             claim.status === 'sent-to-insurer' ? 'Enviado' :
+                             capitalizeFirstLetter(claim.status)}
                           </span>
                         </td>
                         <td
@@ -574,17 +568,15 @@ const AdminDashboard = () => {
                             ref={provided.innerRef}
                             {...provided.droppableProps}
                             className={`min-h-96 space-y-3 ${
-                              snapshot.isDraggingOver ? 'bg-blue-50 border-2 border-blue-300 border-dashed' : ''
+                              snapshot.isDraggingOver
+                                ? 'bg-blue-50 border-2 border-blue-300 border-dashed'
+                                : ''
                             }`}
                           >
                             {kanbanFilteredClaims
                               .filter(claim => claim.status === column.status)
                               .map((claim, index) => (
-                                <Draggable
-                                  key={claim.id}
-                                  draggableId={claim.id}
-                                  index={index}
-                                >
+                                <Draggable key={claim.id} draggableId={claim.id} index={index}>
                                   {(provided, snapshot) => (
                                     <div
                                       ref={provided.innerRef}
