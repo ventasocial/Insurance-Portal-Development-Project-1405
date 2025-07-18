@@ -1,89 +1,46 @@
-.app-container {
+/* Reset styles */
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  background-color: #f9fafb;
+}
+
+#root {
+  width: 100%;
   min-height: 100vh;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
 }
 
-.fortex-gradient {
-  background: linear-gradient(135deg, #253C80 0%, #1e3a8a 100%);
+/* Spinner animation */
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
 }
 
-.document-card {
-  transition: all 0.3s ease;
-}
-
-.document-card:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 10px 25px rgba(0,0,0,0.1);
-}
-
-.status-badge {
-  display: inline-flex;
-  align-items: center;
-  padding: 0.375rem 0.75rem;
-  border-radius: 9999px;
-  font-size: 0.75rem;
-  font-weight: 500;
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
-}
-
-.status-pending {
-  background-color: #fef3c7;
-  color: #92400e;
-}
-
-.status-approved {
-  background-color: #d1fae5;
-  color: #065f46;
-}
-
-.status-rejected {
-  background-color: #fee2e2;
-  color: #991b1b;
-}
-
-.status-under-review {
-  background-color: #dbeafe;
-  color: #1e40af;
-}
-
-.kanban-column {
-  min-height: 600px;
-  background: #f8fafc;
-  border-radius: 0.5rem;
-  padding: 1rem;
-}
-
-.kanban-card {
-  background: white;
-  border-radius: 0.5rem;
-  padding: 1rem;
-  margin-bottom: 0.75rem;
-  box-shadow: 0 1px 3px rgba(0,0,0,0.1);
-  cursor: pointer;
-  transition: all 0.2s ease;
-}
-
-.kanban-card:hover {
+/* Button hover effects */
+button:hover {
+  opacity: 0.9;
   transform: translateY(-1px);
-  box-shadow: 0 4px 12px rgba(0,0,0,0.15);
 }
 
-.upload-zone {
-  border: 2px dashed #d1d5db;
-  border-radius: 0.5rem;
-  padding: 2rem;
-  text-align: center;
-  transition: all 0.2s ease;
-  cursor: pointer;
+/* Table hover effects */
+table tbody tr:hover {
+  background-color: #f9fafb;
 }
 
-.upload-zone:hover {
-  border-color: #253C80;
-  background-color: #f8fafc;
-}
-
-.upload-zone.active {
-  border-color: #253C80;
-  background-color: #eff6ff;
+/* Responsive design */
+@media (max-width: 768px) {
+  table {
+    font-size: 12px;
+  }
+  
+  th, td {
+    padding: 8px !important;
+  }
 }

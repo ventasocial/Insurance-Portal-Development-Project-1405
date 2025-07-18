@@ -14,7 +14,7 @@ const Login = () => {
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
   const { login, loginDemo, user } = useAuth();
-  const [showCredentialLogin, setShowCredentialLogin] = useState(false);
+  const [showCredentialLogin, setShowCredentialLogin] = useState(true);
   const [credentials, setCredentials] = useState({
     email: '',
     password: ''
@@ -25,7 +25,7 @@ const Login = () => {
       navigate('/dashboard');
       return;
     }
-
+    
     const token = searchParams.get('token');
     if (token) {
       handleMagicLinkLogin(token);
@@ -57,20 +57,20 @@ const Login = () => {
     }
   };
 
-  const handleCredentialLogin = (e) => {
+  const handleCredentialLogin = async (e) => {
     e.preventDefault();
     setLoading(true);
+    
     try {
-      // Simulate login with credentials - in a real app, this would verify with backend
       if (credentials.email && credentials.password) {
-        loginDemo(); // Using demo login for this example
+        await login(credentials.email, credentials.password);
         toast.success('¡Bienvenido al portal de Fortex!');
         navigate('/dashboard');
       } else {
         toast.error('Por favor ingresa email y contraseña');
       }
     } catch (error) {
-      toast.error('Error al iniciar sesión');
+      toast.error('Error al iniciar sesión: ' + (error.message || 'Credenciales inválidas'));
       console.error('Login error:', error);
     } finally {
       setLoading(false);
@@ -110,12 +110,17 @@ const Login = () => {
                 Correo Electrónico
               </label>
               <div className="relative">
-                <SafeIcon icon={FiMail} className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
+                <SafeIcon
+                  icon={FiMail}
+                  className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5"
+                />
                 <input
                   type="email"
                   required
                   value={credentials.email}
-                  onChange={(e) => setCredentials({...credentials, email: e.target.value})}
+                  onChange={(e) =>
+                    setCredentials({ ...credentials, email: e.target.value })
+                  }
                   className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-fortex-primary focus:border-transparent"
                   placeholder="tu@email.com"
                 />
@@ -126,12 +131,17 @@ const Login = () => {
                 Contraseña
               </label>
               <div className="relative">
-                <SafeIcon icon={FiLock} className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
+                <SafeIcon
+                  icon={FiLock}
+                  className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5"
+                />
                 <input
                   type="password"
                   required
                   value={credentials.password}
-                  onChange={(e) => setCredentials({...credentials, password: e.target.value})}
+                  onChange={(e) =>
+                    setCredentials({ ...credentials, password: e.target.value })
+                  }
                   className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-fortex-primary focus:border-transparent"
                   placeholder="••••••••"
                 />
@@ -150,7 +160,7 @@ const Login = () => {
                 onClick={() => setShowCredentialLogin(false)}
                 className="text-fortex-primary hover:text-fortex-secondary text-sm font-medium transition-colors"
               >
-                Volver a opciones de acceso
+                Ver otras opciones de acceso
               </button>
             </div>
           </form>
@@ -158,7 +168,8 @@ const Login = () => {
           <div className="text-center space-y-4">
             <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
               <p className="text-sm text-blue-800">
-                Para acceder al portal, utiliza el enlace enviado a tu correo electrónico, accede con tus credenciales o prueba el acceso demo.
+                Para acceder al portal, utiliza el enlace enviado a tu correo electrónico,
+                accede con tus credenciales o prueba el acceso demo.
               </p>
             </div>
 

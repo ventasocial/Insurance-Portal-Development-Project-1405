@@ -19,12 +19,14 @@ export const ClaimsProvider = ({ children }) => {
 
   const fetchClaims = async () => {
     if (!user) return;
-    
     setLoading(true);
     try {
+      console.log('Fetching claims for user:', user.id, 'isAdmin:', isAdmin);
       const claimsData = isAdmin 
-        ? await claimsService.getAllClaims()
+        ? await claimsService.getAllClaims() 
         : await claimsService.getUserClaims(user.contactId);
+      
+      console.log('Claims data fetched:', claimsData.length, 'claims');
       setClaims(claimsData);
     } catch (error) {
       console.error('Error fetching claims:', error);
@@ -35,6 +37,7 @@ export const ClaimsProvider = ({ children }) => {
 
   const updateClaimStatus = async (claimId, status, comments = '') => {
     try {
+      console.log('Updating claim status:', claimId, status);
       await claimsService.updateClaimStatus(claimId, status, comments);
       await fetchClaims();
     } catch (error) {
@@ -45,6 +48,7 @@ export const ClaimsProvider = ({ children }) => {
 
   const updateDocumentStatus = async (claimId, documentType, status, comments = '') => {
     try {
+      console.log('Updating document status:', claimId, documentType, status);
       await claimsService.updateDocumentStatus(claimId, documentType, status, comments);
       await fetchClaims();
     } catch (error) {
@@ -55,6 +59,7 @@ export const ClaimsProvider = ({ children }) => {
 
   useEffect(() => {
     if (user) {
+      console.log('User detected, fetching claims');
       fetchClaims();
     }
   }, [user, isAdmin]);

@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { authService } from '../services/authService';
+import supabase from '../lib/supabase';
 
 const AuthContext = createContext();
 
@@ -19,20 +20,52 @@ export const AuthProvider = ({ children }) => {
   useEffect(() => {
     const initAuth = async () => {
       try {
-        const token = localStorage.getItem('fortex_token');
-        const adminToken = localStorage.getItem('fortex_admin_token');
+        console.log('Initializing authentication');
+        // Check for existing Supabase session
+        const { data } = await supabase.auth.getSession();
+        const session = data?.session;
+        
+        if (session) {
+          console.log('Found Supabase session:', session.user.email);
+          const userData = {
+            id: session.user.id,
+            contactId: session.user.id,
+            email: session.user.email,
+            firstName: session.user.user_metadata?.firstName || 'Usuario',
+            lastName: session.user.user_metadata?.lastName || '',
+            phone: session.user.user_metadata?.phone || '',
+            roles: session.user.user_metadata?.roles || ['client']
+          };
+          setUser(userData);
+          setRoles(userData.roles);
+        } else {
+          console.log('No Supabase session, checking for stored tokens');
+          // Fallback to stored token
+          const token = localStorage.getItem('fortex_token');
+          const adminToken = localStorage.getItem('fortex_admin_token');
+          const operatorToken = localStorage.getItem('fortex_operator_token');
 
-        if (adminToken) {
-          const adminUser = await authService.validateAdminToken(adminToken);
-          if (adminUser) {
-            setUser(adminUser);
-            setRoles(['admin', 'operator']);
-          }
-        } else if (token) {
-          const userData = await authService.validateMagicLink(token);
-          if (userData) {
-            setUser(userData);
-            setRoles(userData.roles || ['client']);
+          if (adminToken) {
+            console.log('Found admin token');
+            const adminUser = await authService.validateAdminToken(adminToken);
+            if (adminUser) {
+              setUser(adminUser);
+              setRoles(['admin', 'operator']);
+            }
+          } else if (operatorToken) {
+            console.log('Found operator token');
+            const operatorUser = await authService.validateAdminToken(operatorToken);
+            if (operatorUser) {
+              setUser(operatorUser);
+              setRoles(['operator']);
+            }
+          } else if (token) {
+            console.log('Found client token');
+            const userData = await authService.validateMagicLink(token);
+            if (userData) {
+              setUser(userData);
+              setRoles(userData.roles || ['client']);
+            }
           }
         }
       } catch (error) {
@@ -45,13 +78,45 @@ export const AuthProvider = ({ children }) => {
     initAuth();
   }, []);
 
-  const login = async (token) => {
+  const login = async (email, password) => {
     try {
-      const userData = await authService.validateMagicLink(token);
-      setUser(userData);
-      setRoles(userData.roles || ['client']);
-      localStorage.setItem('fortex_token', token);
-      return userData;
+      console.log('Attempting login with email:', email);
+      // Try Supabase login
+      try {
+        const { data, error } = await supabase.auth.signInWithPassword({
+          email,
+          password
+        });
+
+        if (!error && data?.user) {
+          console.log('Supabase login successful:', data.user.email);
+          const userData = {
+            id: data.user.id,
+            contactId: data.user.id,
+            email: data.user.email,
+            firstName: data.user.user_metadata?.firstName || 'Usuario',
+            lastName: data.user.user_metadata?.lastName || '',
+            phone: data.user.user_metadata?.phone || '',
+            roles: data.user.user_metadata?.roles || ['client']
+          };
+          setUser(userData);
+          setRoles(userData.roles || ['client']);
+          return userData;
+        }
+      } catch (e) {
+        console.error('Supabase login failed, falling back to demo login:', e);
+      }
+
+      // Fallback to demo login for specific credentials
+      if (email === 'admin@fortex.com' && password === 'admin123') {
+        console.log('Using admin demo login');
+        return adminLogin({ email, password });
+      } else if (email === 'operator@fortex.com' && password === 'operator123') {
+        console.log('Using operator demo login');
+        return operatorLogin({ email, password });
+      } else {
+        throw new Error('Invalid credentials');
+      }
     } catch (error) {
       console.error('Login error:', error);
       throw error;
@@ -59,6 +124,7 @@ export const AuthProvider = ({ children }) => {
   };
 
   const loginDemo = () => {
+    console.log('Using demo login');
     const demoUser = {
       id: 'demo-user-123',
       contactId: 'demo-contact-456',
@@ -75,11 +141,61 @@ export const AuthProvider = ({ children }) => {
   };
 
   const adminLogin = async (credentials) => {
-    const adminData = await authService.adminLogin(credentials);
-    setUser(adminData.user);
-    setRoles(['admin', 'operator']);
-    localStorage.setItem('fortex_admin_token', adminData.token);
-    return adminData;
+    try {
+      const { email, password } = credentials;
+      console.log('Attempting admin login with email:', email);
+      
+      if (email === 'admin@fortex.com' && password === 'admin123') {
+        const adminData = {
+          user: {
+            id: 'admin-123',
+            email: 'admin@fortex.com',
+            firstName: 'Administrador',
+            roles: ['admin', 'operator']
+          },
+          token: 'admin-token-12345'
+        };
+        setUser(adminData.user);
+        setRoles(['admin', 'operator']);
+        localStorage.setItem('fortex_admin_token', adminData.token);
+        console.log('Admin login successful');
+        return adminData;
+      } else {
+        throw new Error('Invalid credentials');
+      }
+    } catch (error) {
+      console.error('Admin login error:', error);
+      throw error;
+    }
+  };
+
+  const operatorLogin = async (credentials) => {
+    try {
+      const { email, password } = credentials;
+      console.log('Attempting operator login with email:', email);
+      
+      if (email === 'operator@fortex.com' && password === 'operator123') {
+        const operatorData = {
+          user: {
+            id: 'operator-123',
+            email: 'operator@fortex.com',
+            firstName: 'Operador',
+            roles: ['operator']
+          },
+          token: 'operator-token-12345'
+        };
+        setUser(operatorData.user);
+        setRoles(['operator']);
+        localStorage.setItem('fortex_operator_token', operatorData.token);
+        console.log('Operator login successful');
+        return operatorData;
+      } else {
+        throw new Error('Invalid credentials');
+      }
+    } catch (error) {
+      console.error('Operator login error:', error);
+      throw error;
+    }
   };
 
   const hasRole = (requiredRole) => {
@@ -92,13 +208,21 @@ export const AuthProvider = ({ children }) => {
 
   const updateUserProfile = (profileData) => {
     setUser(prev => ({ ...prev, ...profileData }));
+    console.log('User profile updated:', profileData);
   };
 
-  const logout = () => {
+  const logout = async () => {
+    try {
+      console.log('Logging out');
+      await supabase.auth.signOut();
+    } catch (error) {
+      console.error('Supabase signout error:', error);
+    }
     setUser(null);
     setRoles([]);
     localStorage.removeItem('fortex_token');
     localStorage.removeItem('fortex_admin_token');
+    localStorage.removeItem('fortex_operator_token');
   };
 
   const value = {
@@ -112,6 +236,7 @@ export const AuthProvider = ({ children }) => {
     login,
     loginDemo,
     adminLogin,
+    operatorLogin,
     updateUserProfile,
     logout
   };
