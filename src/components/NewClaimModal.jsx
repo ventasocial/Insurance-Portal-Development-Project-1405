@@ -6,12 +6,18 @@ import { useAuth } from '../contexts/AuthContext';
 import { claimsService } from '../services/claimsService';
 import toast from 'react-hot-toast';
 
-const { FiX, FiSave, FiUser, FiMail, FiPhone, FiClipboard, FiCalendar } = FiIcons;
+const { FiX, FiSave, FiUser, FiMail, FiPhone, FiClipboard, FiCalendar, FiTrash2 } = FiIcons;
 
 const NewClaimModal = ({ isOpen, onClose, onClaimCreated, initialData = null }) => {
   const { user } = useAuth();
   const [loading, setLoading] = useState(false);
   const [saveAseguradoData, setSaveAseguradoData] = useState(true);
+  const [savedAsegurados, setSavedAsegurados] = useState([]);
+  const [selectedAsegurado, setSelectedAsegurado] = useState(null);
+  const [servicioOptions, setServicioOptions] = useState({
+    reembolso: [],
+    programacion: []
+  });
   const [formData, setFormData] = useState({
     firstName: user?.firstName || '',
     lastName: user?.lastName || '',
@@ -25,8 +31,7 @@ const NewClaimModal = ({ isOpen, onClose, onClaimCreated, initialData = null }) 
     aseguradora: '',
     tipoSiniestro: '',
     tipoReclamo: '',
-    tipoServicioReembolso: '',
-    tipoServicioProgramacion: '',
+    servicios: [],
     esCirugiaEspecializada: false,
     descripcionSiniestro: '',
     fechaSiniestro: '',
@@ -38,10 +43,67 @@ const NewClaimModal = ({ isOpen, onClose, onClaimCreated, initialData = null }) 
     if (initialData) {
       setFormData({
         ...formData,
-        ...initialData
+        ...initialData,
+        servicios: initialData.servicios || []
       });
     }
+
+    // Cargar los asegurados guardados
+    const loadSavedAsegurados = async () => {
+      try {
+        // En producción, esto cargaría desde Supabase o GHL
+        const asegurados = [
+          {
+            id: '1',
+            nombre: 'Juan Pérez García',
+            email: 'juan.perez@email.com',
+            poliza: 'POL-123456',
+            digitoVerificador: '7',
+            aseguradora: 'GNP'
+          },
+          {
+            id: '2',
+            nombre: 'María Pérez García',
+            email: 'maria.perez@email.com',
+            poliza: 'POL-789012',
+            digitoVerificador: '3',
+            aseguradora: 'AXA'
+          },
+          {
+            id: '3',
+            nombre: 'Carlos Pérez García',
+            email: 'carlos.perez@email.com',
+            poliza: 'POL-345678',
+            digitoVerificador: '9',
+            aseguradora: 'Qualitas'
+          }
+        ];
+        setSavedAsegurados(asegurados);
+      } catch (error) {
+        console.error('Error cargando asegurados:', error);
+      }
+    };
+
+    loadSavedAsegurados();
   }, [initialData]);
+
+  useEffect(() => {
+    // Configurar las opciones de servicio disponibles
+    setServicioOptions({
+      reembolso: [
+        { id: 'hospitales', label: 'Hospitales' },
+        { id: 'honorarios-medicos', label: 'Honorarios Médicos' },
+        { id: 'estudios-laboratorio', label: 'Estudios de Laboratorio' },
+        { id: 'medicamentos', label: 'Medicamentos' },
+        { id: 'rehabilitacion', label: 'Rehabilitación' }
+      ],
+      programacion: [
+        { id: 'cirugia', label: 'Cirugía' },
+        { id: 'medicamentos', label: 'Medicamentos' },
+        { id: 'rehabilitacion', label: 'Rehabilitación' }
+      ]
+    });
+  }, []);
 
   // Función para capitalizar la primera letra
   const capitalizeFirstLetter = (string) => {
@@ -51,6 +113,53 @@ const NewClaimModal = ({ isOpen, onClose, onClaimCreated, initialData = null }) 
 
   const handleInputChange = (field, value) => {
     setFormData(prev => ({ ...prev, [field]: value }));
+  };
+
+  const handleServiceToggle = (serviceId) => {
+    setFormData(prev => {
+      const currentServices = prev.servicios || [];
+      if (currentServices.includes(serviceId)) {
+        return {
+          ...prev,
+          servicios: currentServices.filter(id => id !== serviceId)
+        };
+      } else {
+        return {
+          ...prev,
+          servicios: [...currentServices, serviceId]
+        };
+      }
+    });
+  };
+
+  const handleAseguradoSelect = (asegurado) => {
+    if (asegurado) {
+      setFormData(prev => ({
+        ...prev,
+        nombreAsegurado: asegurado.nombre,
+        emailAsegurado: asegurado.email,
+        numeroPoliza: asegurado.poliza,
+        digitoVerificador: asegurado.digitoVerificador,
+        aseguradora: asegurado.aseguradora
+      }));
+      setSelectedAsegurado(asegurado);
+    } else {
+      setSelectedAsegurado(null);
+    }
+  };
+
+  const handleDeleteAsegurado = async (aseguradoId) => {
+    try {
+      // En producción, esto eliminaría de Supabase o GHL
+      setSavedAsegurados(prev => prev.filter(a => a.id !== aseguradoId));
+      if (selectedAsegurado && selectedAsegurado.id === aseguradoId) {
+        setSelectedAsegurado(null);
+      }
+      toast.success('Asegurado eliminado correctamente');
+    } catch (error) {
+      toast.error('Error al eliminar asegurado');
+      console.error('Delete asegurado error:', error);
+    }
   };
 
   // Validación de teléfono
@@ -69,15 +178,22 @@ const NewClaimModal = ({ isOpen, onClose, onClaimCreated, initialData = null }) 
   // Manejar guardado de asegurado
   const handleSaveAsegurado = async () => {
     try {
-      // En producción, esto guardaría en Supabase o en GHL
-      await new Promise(resolve => setTimeout(resolve, 500));
-      console.log('Asegurado guardado:', {
+      // En producción, esto guardaría en Supabase o GHL
+      const newAsegurado = {
+        id: Date.now().toString(), // Generar un ID único
         nombre: formData.nombreAsegurado,
         email: formData.emailAsegurado,
         poliza: formData.numeroPoliza,
         digitoVerificador: formData.digitoVerificador,
         aseguradora: formData.aseguradora
-      });
+      };
+      
+      // Verificar si ya existe un asegurado con los mismos datos
+      const exists = savedAsegurados.some(a => a.nombre === newAsegurado.nombre && a.poliza === newAsegurado.poliza);
+      
+      if (!exists) {
+        setSavedAsegurados(prev => [...prev, newAsegurado]);
+      }
     } catch (error) {
       console.error('Error guardando asegurado:', error);
       throw error;
@@ -105,9 +221,22 @@ const NewClaimModal = ({ isOpen, onClose, onClaimCreated, initialData = null }) 
       return;
     }
 
+    // Validar que se haya seleccionado al menos un servicio
+    if (formData.tipoReclamo && formData.servicios.length === 0) {
+      toast.error('Por favor selecciona al menos un tipo de servicio');
+      return;
+    }
+
     setLoading(true);
     try {
-      const newClaim = await claimsService.createClaim(formData);
+      // Convertir los servicios seleccionados a formato adecuado para el backend
+      const submissionData = {
+        ...formData,
+        tipoServicioReembolso: formData.tipoReclamo === 'reembolso' ? formData.servicios.join(',') : '',
+        tipoServicioProgramacion: formData.tipoReclamo === 'programacion' ? formData.servicios.join(',') : '',
+      };
+
+      const newClaim = await claimsService.createClaim(submissionData);
       toast.success('¡Reclamo creado exitosamente!');
 
       // Guardar información del asegurado para futuros reclamos si está activado el checkbox
@@ -139,13 +268,13 @@ const NewClaimModal = ({ isOpen, onClose, onClaimCreated, initialData = null }) 
         aseguradora: '',
         tipoSiniestro: '',
         tipoReclamo: '',
-        tipoServicioReembolso: '',
-        tipoServicioProgramacion: '',
+        servicios: [],
         esCirugiaEspecializada: false,
         descripcionSiniestro: '',
         fechaSiniestro: '',
         numeroReclamo: ''
       });
+      setSelectedAsegurado(null);
     } catch (error) {
       toast.error('Error al crear el reclamo');
       console.error('Create claim error:', error);
@@ -188,6 +317,39 @@ const NewClaimModal = ({ isOpen, onClose, onClaimCreated, initialData = null }) 
 
           {/* Form */}
           <form onSubmit={handleSubmit} className="p-6 space-y-6">
+            {/* Asegurados guardados */}
+            {savedAsegurados.length > 0 && (
+              <div className="bg-gray-50 p-4 rounded-lg">
+                <h3 className="text-md font-medium text-gray-700 mb-3">Asegurados Guardados</h3>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                  {savedAsegurados.map((asegurado) => (
+                    <div 
+                      key={asegurado.id}
+                      className={`flex justify-between items-center p-3 rounded-md cursor-pointer border ${
+                        selectedAsegurado?.id === asegurado.id ? 'bg-blue-50 border-blue-300' : 'border-gray-300'
+                      }`}
+                      onClick={() => handleAseguradoSelect(asegurado)}
+                    >
+                      <div className="flex-1">
+                        <p className="font-medium text-sm">{asegurado.nombre}</p>
+                        <p className="text-xs text-gray-500">Póliza: {asegurado.poliza} - {asegurado.aseguradora}</p>
+                      </div>
+                      <button 
+                        type="button" 
+                        className="text-red-500 hover:text-red-700 p-1"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleDeleteAsegurado(asegurado.id);
+                        }}
+                      >
+                        <SafeIcon icon={FiTrash2} className="w-4 h-4" />
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -331,7 +493,10 @@ const NewClaimModal = ({ isOpen, onClose, onClaimCreated, initialData = null }) 
                 </label>
                 <select
                   value={formData.tipoReclamo}
-                  onChange={(e) => handleInputChange('tipoReclamo', e.target.value)}
+                  onChange={(e) => {
+                    handleInputChange('tipoReclamo', e.target.value);
+                    handleInputChange('servicios', []);
+                  }}
                   required
                   disabled={initialData?.tipoSiniestro === 'complemento'}
                   className={`w-full px-3 py-2 border border-gray-300 rounded-lg ${initialData?.tipoSiniestro === 'complemento' ? 'bg-gray-50 text-gray-600' : 'focus:ring-2 focus:ring-fortex-primary focus:border-transparent'}`}
@@ -346,79 +511,93 @@ const NewClaimModal = ({ isOpen, onClose, onClaimCreated, initialData = null }) 
 
             {/* Campos condicionales según el tipo de reclamo */}
             {formData.tipoReclamo === 'reembolso' && (
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Tipo de Siniestro
-                  </label>
-                  <select
-                    value={formData.tipoSiniestro}
-                    onChange={(e) => handleInputChange('tipoSiniestro', e.target.value)}
-                    required
-                    disabled={initialData?.tipoSiniestro === 'complemento'}
-                    className={`w-full px-3 py-2 border border-gray-300 rounded-lg ${initialData?.tipoSiniestro === 'complemento' ? 'bg-gray-50 text-gray-600' : 'focus:ring-2 focus:ring-fortex-primary focus:border-transparent'}`}
-                  >
-                    <option value="">Seleccionar...</option>
-                    <option value="inicial">Inicial</option>
-                    <option value="complemento">Complemento</option>
-                  </select>
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Tipo de Servicio
-                  </label>
-                  <select
-                    value={formData.tipoServicioReembolso}
-                    onChange={(e) => handleInputChange('tipoServicioReembolso', e.target.value)}
-                    required
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-fortex-primary focus:border-transparent"
-                  >
-                    <option value="">Seleccionar...</option>
-                    <option value="hospitales">Hospitales</option>
-                    <option value="honorarios-medicos">Honorarios Médicos</option>
-                    <option value="estudios-laboratorio">Estudios de Laboratorio</option>
-                    <option value="medicamentos">Medicamentos</option>
-                    <option value="rehabilitacion">Rehabilitación</option>
-                  </select>
-                </div>
-                {formData.tipoSiniestro === 'complemento' && (
+              <>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Número de Reclamo
+                      Tipo de Siniestro
                     </label>
-                    <input
-                      type="text"
-                      value={formData.numeroReclamo}
-                      onChange={(e) => handleInputChange('numeroReclamo', e.target.value)}
+                    <select
+                      value={formData.tipoSiniestro}
+                      onChange={(e) => handleInputChange('tipoSiniestro', e.target.value)}
                       required
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-fortex-primary focus:border-transparent"
-                      placeholder="Número proporcionado por la aseguradora"
-                    />
+                      disabled={initialData?.tipoSiniestro === 'complemento'}
+                      className={`w-full px-3 py-2 border border-gray-300 rounded-lg ${initialData?.tipoSiniestro === 'complemento' ? 'bg-gray-50 text-gray-600' : 'focus:ring-2 focus:ring-fortex-primary focus:border-transparent'}`}
+                    >
+                      <option value="">Seleccionar...</option>
+                      <option value="inicial">Inicial</option>
+                      <option value="complemento">Complemento</option>
+                    </select>
                   </div>
-                )}
-              </div>
+                  {formData.tipoSiniestro === 'complemento' && (
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        Número de Reclamo
+                      </label>
+                      <input
+                        type="text"
+                        value={formData.numeroReclamo}
+                        onChange={(e) => handleInputChange('numeroReclamo', e.target.value)}
+                        required
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-fortex-primary focus:border-transparent"
+                        placeholder="Número proporcionado por la aseguradora"
+                      />
+                    </div>
+                  )}
+                </div>
+
+                {/* Tipo de Servicio con checkboxes para Reembolso */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-3">
+                    Tipo de Servicio
+                  </label>
+                  <div className="grid grid-cols-2 gap-2">
+                    {servicioOptions.reembolso.map((option) => (
+                      <div key={option.id} className="flex items-center">
+                        <input
+                          type="checkbox"
+                          id={`service-${option.id}`}
+                          checked={formData.servicios?.includes(option.id)}
+                          onChange={() => handleServiceToggle(option.id)}
+                          className="w-4 h-4 text-fortex-primary focus:ring-fortex-primary border-gray-300 rounded"
+                        />
+                        <label htmlFor={`service-${option.id}`} className="ml-2 block text-sm text-gray-900">
+                          {option.label}
+                        </label>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </>
             )}
 
             {formData.tipoReclamo === 'programacion' && (
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <>
+                {/* Tipo de Servicio con checkboxes para Programación */}
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                  <label className="block text-sm font-medium text-gray-700 mb-3">
                     Tipo de Servicio
                   </label>
-                  <select
-                    value={formData.tipoServicioProgramacion}
-                    onChange={(e) => handleInputChange('tipoServicioProgramacion', e.target.value)}
-                    required
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-fortex-primary focus:border-transparent"
-                  >
-                    <option value="">Seleccionar...</option>
-                    <option value="cirugia">Cirugía</option>
-                    <option value="medicamentos">Medicamentos</option>
-                    <option value="rehabilitacion">Rehabilitación</option>
-                  </select>
+                  <div className="grid grid-cols-2 gap-2">
+                    {servicioOptions.programacion.map((option) => (
+                      <div key={option.id} className="flex items-center">
+                        <input
+                          type="checkbox"
+                          id={`service-${option.id}`}
+                          checked={formData.servicios?.includes(option.id)}
+                          onChange={() => handleServiceToggle(option.id)}
+                          className="w-4 h-4 text-fortex-primary focus:ring-fortex-primary border-gray-300 rounded"
+                        />
+                        <label htmlFor={`service-${option.id}`} className="ml-2 block text-sm text-gray-900">
+                          {option.label}
+                        </label>
+                      </div>
+                    ))}
+                  </div>
                 </div>
-                {formData.tipoServicioProgramacion === 'cirugia' && (
-                  <div className="flex items-center">
+
+                {formData.servicios?.includes('cirugia') && (
+                  <div className="flex items-center mt-3">
                     <input
                       type="checkbox"
                       id="cirugia-especializada"
@@ -431,7 +610,7 @@ const NewClaimModal = ({ isOpen, onClose, onClaimCreated, initialData = null }) 
                     </label>
                   </div>
                 )}
-              </div>
+              </>
             )}
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
