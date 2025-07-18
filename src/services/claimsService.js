@@ -35,7 +35,8 @@ const mockClaims = [
     createdAt: '2024-01-15T10:30:00Z',
     updatedAt: '2024-01-15T10:30:00Z',
     lastEditedBy: 'Administrador',
-    documentsCount: 3
+    documentsCount: 3,
+    numeroReclamoAseguradora: 'R-12345'
   },
   {
     id: 'claim-efgh',
@@ -57,7 +58,8 @@ const mockClaims = [
     createdAt: '2024-01-10T14:20:00Z',
     updatedAt: '2024-01-12T09:15:00Z',
     lastEditedBy: 'Carlos Rodríguez',
-    documentsCount: 5
+    documentsCount: 5,
+    numeroReclamo: 'R-67890'
   },
   {
     id: 'claim-ijkl',
@@ -112,7 +114,8 @@ const allMockClaims = [
     createdAt: '2024-01-12T09:15:00Z',
     updatedAt: '2024-01-13T14:20:00Z',
     lastEditedBy: 'Miguel Ángel',
-    documentsCount: 2
+    documentsCount: 2,
+    numeroReclamoAseguradora: 'R-56789'
   },
   {
     id: 'claim-qrst',
@@ -175,7 +178,8 @@ const allMockClaims = [
     createdAt: '2023-12-15T08:30:00Z',
     updatedAt: '2024-01-10T16:45:00Z', // 26 days for processing
     lastEditedBy: 'Laura Torres',
-    documentsCount: 5
+    documentsCount: 5,
+    numeroReclamoAseguradora: 'R-98765'
   },
   {
     id: 'claim-cdef',
@@ -268,7 +272,6 @@ const generateClaimId = () => {
   do {
     claimCode = generateClaimCode();
   } while (usedClaimCodes.has(claimCode));
-  
   usedClaimCodes.add(claimCode);
   return 'claim-' + claimCode.toLowerCase();
 };
@@ -277,7 +280,6 @@ const generateClaimId = () => {
 const checkAllDocumentsApproved = (claimId) => {
   const docs = mockDocuments[claimId];
   if (!docs || Object.keys(docs).length === 0) return false;
-  
   return Object.values(docs).every(doc => doc.status === 'approved');
 };
 
@@ -335,6 +337,7 @@ export const claimsService = {
         // Add to mock data
         mockClaims.push(newClaim);
         allMockClaims.push(newClaim);
+
         resolve(newClaim);
       }, 1500);
     });
@@ -346,7 +349,7 @@ export const claimsService = {
       setTimeout(() => {
         // In production, this would update the GoHighLevel contact/opportunity fields
         console.log('Updating claim:', claimId, updateData);
-        
+
         // Update the claim in mock data
         const claimIndex = allMockClaims.findIndex(c => c.id === claimId);
         if (claimIndex !== -1) {
@@ -356,7 +359,7 @@ export const claimsService = {
             updatedAt: new Date().toISOString(),
             lastEditedBy: updateData.lastEditedBy || 'Usuario del sistema'
           };
-          
+
           // Also update in mockClaims if it exists there
           const userClaimIndex = mockClaims.findIndex(c => c.id === claimId);
           if (userClaimIndex !== -1) {
@@ -368,7 +371,7 @@ export const claimsService = {
             };
           }
         }
-        
+
         resolve({ success: true });
       }, 1000);
     });
@@ -388,7 +391,7 @@ export const claimsService = {
             allMockClaims[claimIndex].comments = comments;
           }
         }
-        
+
         // Also update in mockClaims if it exists there
         const userClaimIndex = mockClaims.findIndex(c => c.id === claimId);
         if (userClaimIndex !== -1) {
@@ -399,7 +402,7 @@ export const claimsService = {
             mockClaims[userClaimIndex].comments = comments;
           }
         }
-        
+
         resolve({ success: true });
       }, 500);
     });
@@ -422,19 +425,22 @@ export const claimsService = {
         // 1. Upload file to GoHighLevel file storage
         // 2. Update the corresponding custom field
         // 3. Set document status to 'under-review'
+
         if (!mockDocuments[claimId]) {
           mockDocuments[claimId] = {};
         }
+
         if (!mockDocuments[claimId][documentType]) {
           mockDocuments[claimId][documentType] = { files: [] };
         }
+
         mockDocuments[claimId][documentType].files.push({
           name: file.name,
           url: URL.createObjectURL(file),
           uploadedAt: new Date().toISOString()
         });
         mockDocuments[claimId][documentType].status = 'under-review';
-        
+
         // Update document count on the claim
         const claimIndex = allMockClaims.findIndex(c => c.id === claimId);
         if (claimIndex !== -1) {
@@ -443,7 +449,7 @@ export const claimsService = {
           allMockClaims[claimIndex].lastEditedBy = 'Cliente (Subida de documento)';
           allMockClaims[claimIndex].updatedAt = new Date().toISOString();
         }
-        
+
         resolve({ success: true });
       }, 2000);
     });
@@ -459,17 +465,17 @@ export const claimsService = {
           if (comments) {
             mockDocuments[claimId][documentType].comments = comments;
           }
-          
+
           // Update the claim's last edited information
           const claimIndex = allMockClaims.findIndex(c => c.id === claimId);
           if (claimIndex !== -1) {
             allMockClaims[claimIndex].lastEditedBy = 'Operador (Revisión de documento)';
             allMockClaims[claimIndex].updatedAt = new Date().toISOString();
-            
+
             // Check if all documents are now approved to update claim status
             if (status === 'approved' && checkAllDocumentsApproved(claimId)) {
               allMockClaims[claimIndex].status = 'verified';
-              
+
               // Also update in mockClaims if it exists there
               const userClaimIndex = mockClaims.findIndex(c => c.id === claimId);
               if (userClaimIndex !== -1) {
@@ -480,6 +486,7 @@ export const claimsService = {
             }
           }
         }
+
         resolve({ success: true });
       }, 500);
     });

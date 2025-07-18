@@ -94,14 +94,22 @@ const ClaimCard = ({ claim, isAdmin = false }) => {
           <span className="text-gray-600">Asegurado:</span>
           <span className="font-medium">{claim.nombreAsegurado}</span>
         </div>
+
         <div className="flex justify-between text-sm">
           <span className="text-gray-600">Póliza:</span>
           <span className="font-medium">{claim.numeroPoliza}</span>
         </div>
+
         <div className="flex justify-between text-sm">
           <span className="text-gray-600">Aseguradora:</span>
           <span className="font-medium">{claim.aseguradora || 'No especificada'}</span>
         </div>
+
+        <div className="flex justify-between text-sm">
+          <span className="text-gray-600">Número de Reclamo:</span>
+          <span className="font-medium">{claim.numeroReclamoAseguradora || claim.numeroReclamo || 'No asignado'}</span>
+        </div>
+
         <div className="flex justify-between text-sm">
           <span className="text-gray-600">Fecha de Creación:</span>
           <span className="font-medium">{new Date(claim.createdAt).toLocaleDateString()}</span>

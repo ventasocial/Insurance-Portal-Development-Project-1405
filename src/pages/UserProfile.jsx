@@ -36,19 +36,19 @@ const UserProfile = ({ isOpen, onClose }) => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    
+
     // Validar número de teléfono
     if (!validatePhone(formData.phone)) {
       toast.error('El número de WhatsApp debe tener el formato: +52 81 1234 5678');
       return;
     }
-    
+
     // Validar email
     if (!validateEmail(formData.email)) {
       toast.error('Por favor ingresa un correo electrónico válido');
       return;
     }
-    
+
     setLoading(true);
     try {
       // In production, this would update the user profile via API

@@ -5,7 +5,7 @@ import SafeIcon from '../common/SafeIcon';
 import { useAuth } from '../contexts/AuthContext';
 import toast from 'react-hot-toast';
 
-const { FiX, FiSave, FiUser, FiMail, FiPhone, FiEdit3 } = FiIcons;
+const { FiX, FiSave, FiUser, FiMail, FiPhone } = FiIcons;
 
 const UserProfile = ({ isOpen, onClose }) => {
   const { user, updateUserProfile } = useAuth();
@@ -21,8 +21,34 @@ const UserProfile = ({ isOpen, onClose }) => {
     setFormData(prev => ({ ...prev, [field]: value }));
   };
 
+  // Validación de teléfono
+  const validatePhone = (phone) => {
+    // Formato esperado: +52 81 1234 5678 o variaciones similares
+    const regex = /^\+\d{2}\s?\d{2}\s?\d{4}\s?\d{4}$/;
+    return regex.test(phone);
+  };
+
+  // Validación de email
+  const validateEmail = (email) => {
+    const regex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    return regex.test(email);
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
+
+    // Validar número de teléfono
+    if (!validatePhone(formData.phone)) {
+      toast.error('El número de WhatsApp debe tener el formato: +52 81 1234 5678');
+      return;
+    }
+
+    // Validar email
+    if (!validateEmail(formData.email)) {
+      toast.error('Por favor ingresa un correo electrónico válido');
+      return;
+    }
+
     setLoading(true);
     try {
       // In production, this would update the user profile via API
@@ -107,7 +133,10 @@ const UserProfile = ({ isOpen, onClose }) => {
                 Email
               </label>
               <div className="relative">
-                <SafeIcon icon={FiMail} className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
+                <SafeIcon
+                  icon={FiMail}
+                  className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5"
+                />
                 <input
                   type="email"
                   required
@@ -124,15 +153,21 @@ const UserProfile = ({ isOpen, onClose }) => {
                 WhatsApp
               </label>
               <div className="relative">
-                <SafeIcon icon={FiPhone} className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
+                <SafeIcon
+                  icon={FiPhone}
+                  className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5"
+                />
                 <input
                   type="tel"
                   required
                   value={formData.phone}
                   onChange={(e) => handleInputChange('phone', e.target.value)}
                   className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-fortex-primary focus:border-transparent"
-                  placeholder="+52 55 1234 5678"
+                  placeholder="+52 81 1234 5678"
                 />
+                <small className="text-xs text-gray-500 mt-1 block">
+                  Ingresa tu número con código de país
+                </small>
               </div>
             </div>
 

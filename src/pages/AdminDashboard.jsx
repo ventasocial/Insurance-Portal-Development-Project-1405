@@ -35,9 +35,8 @@ const AdminDashboard = () => {
   // Calculate average processing time (in days)
   const calculateAvgProcessingTime = () => {
     const archivedClaims = claims.filter(claim => claim.status === 'archived' && claim.createdAt && claim.updatedAt);
-    
     if (archivedClaims.length === 0) return 'N/A';
-    
+
     const totalDays = archivedClaims.reduce((sum, claim) => {
       const createdDate = new Date(claim.createdAt);
       const updatedDate = new Date(claim.updatedAt);
@@ -45,7 +44,7 @@ const AdminDashboard = () => {
       const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
       return sum + diffDays;
     }, 0);
-    
+
     return (totalDays / archivedClaims.length).toFixed(1);
   };
 
@@ -87,21 +86,15 @@ const AdminDashboard = () => {
         }
         
         if (filter.field === 'status') {
-          return filter.include 
-            ? claim.status === filter.value
-            : claim.status !== filter.value;
+          return filter.include ? claim.status === filter.value : claim.status !== filter.value;
         }
-
+        
         if (filter.field === 'tipoReclamo') {
-          return filter.include 
-            ? claim.tipoReclamo === filter.value
-            : claim.tipoReclamo !== filter.value;
+          return filter.include ? claim.tipoReclamo === filter.value : claim.tipoReclamo !== filter.value;
         }
-
+        
         if (filter.field === 'aseguradora') {
-          return filter.include 
-            ? claim.aseguradora === filter.value
-            : claim.aseguradora !== filter.value;
+          return filter.include ? claim.aseguradora === filter.value : claim.aseguradora !== filter.value;
         }
         
         let fieldValue = claim[filter.field];
@@ -156,7 +149,7 @@ const AdminDashboard = () => {
       tipoSiniestro: 'complemento',
       numeroReclamo: claim.numeroReclamoAseguradora || ''
     };
-    
+
     claimsService.createClaim(complementoData)
       .then(newClaim => {
         toast.success('Reclamo complemento creado exitosamente');
@@ -253,9 +246,7 @@ const AdminDashboard = () => {
                 <button
                   onClick={() => setViewMode('kanban')}
                   className={`px-3 py-2 rounded-lg flex items-center ${
-                    viewMode === 'kanban'
-                      ? 'bg-fortex-primary text-white'
-                      : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                    viewMode === 'kanban' ? 'bg-fortex-primary text-white' : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
                   }`}
                 >
                   <SafeIcon icon={FiFilter} className="w-4 h-4 mr-2" />
@@ -264,16 +255,13 @@ const AdminDashboard = () => {
                 <button
                   onClick={() => setViewMode('table')}
                   className={`px-3 py-2 rounded-lg flex items-center ${
-                    viewMode === 'table'
-                      ? 'bg-fortex-primary text-white'
-                      : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                    viewMode === 'table' ? 'bg-fortex-primary text-white' : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
                   }`}
                 >
                   <SafeIcon icon={FiList} className="w-4 h-4 mr-2" />
                   <span>Vista Tabla</span>
                 </button>
               </div>
-              
               <div className="flex-1 sm:ml-4">
                 <div className="relative">
                   <SafeIcon
@@ -313,13 +301,21 @@ const AdminDashboard = () => {
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-fortex-primary focus:border-transparent"
                 >
                   <option value="">Todos</option>
-                  <option value="pending">Pendiente</option>
-                  <option value="verified">Aprobado</option>
-                  <option value="sent-to-insurer">Enviado a Aseguradora</option>
-                  <option value="rejected">Rechazado</option>
+                  {statusOptions.map(status => (
+                    <option key={status} value={status}>
+                      {status === 'pending' 
+                        ? 'Pendiente' 
+                        : status === 'verified' 
+                          ? 'Aprobado' 
+                          : status === 'sent-to-insurer' 
+                            ? 'Enviado a Aseguradora' 
+                            : status === 'rejected' 
+                              ? 'Rechazado' 
+                              : status}
+                    </option>
+                  ))}
                 </select>
               </div>
-
               <div className="flex flex-col space-y-2">
                 <div className="flex items-center justify-between">
                   <label className="text-sm font-medium text-gray-700">
@@ -340,12 +336,11 @@ const AdminDashboard = () => {
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-fortex-primary focus:border-transparent"
                 >
                   <option value="">Todos</option>
-                  <option value="reembolso">Reembolso</option>
-                  <option value="programacion">Programación</option>
-                  <option value="maternidad">Maternidad</option>
+                  {tipoReclamoOptions.map(tipo => (
+                    <option key={tipo} value={tipo}>{tipo}</option>
+                  ))}
                 </select>
               </div>
-
               <div className="flex flex-col space-y-2">
                 <div className="flex items-center justify-between">
                   <label className="text-sm font-medium text-gray-700">
@@ -366,12 +361,11 @@ const AdminDashboard = () => {
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-fortex-primary focus:border-transparent"
                 >
                   <option value="">Todas</option>
-                  <option value="GNP">GNP</option>
-                  <option value="AXA">AXA</option>
-                  <option value="Qualitas">Qualitas</option>
+                  {aseguradoraOptions.map(aseguradora => (
+                    <option key={aseguradora} value={aseguradora}>{aseguradora}</option>
+                  ))}
                 </select>
               </div>
-
               <div className="flex flex-col space-y-2">
                 <div className="flex items-center justify-between">
                   <label className="text-sm font-medium text-gray-700">
@@ -394,7 +388,6 @@ const AdminDashboard = () => {
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-fortex-primary focus:border-transparent"
                 />
               </div>
-
               <div className="flex flex-col space-y-2">
                 <div className="flex items-center justify-between">
                   <label className="text-sm font-medium text-gray-700">
@@ -448,7 +441,7 @@ const AdminDashboard = () => {
                         Estado
                       </th>
                       <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        Fecha
+                        Fecha de Creación
                       </th>
                       <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                         Acciones
@@ -461,37 +454,37 @@ const AdminDashboard = () => {
                         key={claim.id}
                         className="hover:bg-gray-50 cursor-pointer"
                       >
-                        <td 
+                        <td
                           className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900"
                           onClick={() => window.location.href = `#/admin/claim/${claim.id}`}
                         >
                           R-{claim.id.replace('claim-', '').toUpperCase()}
                         </td>
-                        <td 
+                        <td
                           className="px-6 py-4 whitespace-nowrap text-sm text-gray-500"
                           onClick={() => window.location.href = `#/admin/claim/${claim.id}`}
                         >
                           {claim.nombreAsegurado}
                         </td>
-                        <td 
+                        <td
                           className="px-6 py-4 whitespace-nowrap text-sm text-gray-500"
                           onClick={() => window.location.href = `#/admin/claim/${claim.id}`}
                         >
                           {claim.numeroPoliza}
                         </td>
-                        <td 
+                        <td
                           className="px-6 py-4 whitespace-nowrap text-sm text-gray-500"
                           onClick={() => window.location.href = `#/admin/claim/${claim.id}`}
                         >
                           {claim.numeroReclamoAseguradora || claim.numeroReclamo || '-'}
                         </td>
-                        <td 
+                        <td
                           className="px-6 py-4 whitespace-nowrap text-sm text-gray-500"
                           onClick={() => window.location.href = `#/admin/claim/${claim.id}`}
                         >
                           {claim.aseguradora}
                         </td>
-                        <td 
+                        <td
                           className="px-6 py-4 whitespace-nowrap text-sm text-gray-500"
                           onClick={() => window.location.href = `#/admin/claim/${claim.id}`}
                         >
@@ -500,7 +493,7 @@ const AdminDashboard = () => {
                             <span className="ml-1 text-xs">({claim.tipoSiniestro})</span>
                           }
                         </td>
-                        <td 
+                        <td
                           className="px-6 py-4 whitespace-nowrap"
                           onClick={() => window.location.href = `#/admin/claim/${claim.id}`}
                         >
@@ -526,7 +519,7 @@ const AdminDashboard = () => {
                                     : claim.status}
                           </span>
                         </td>
-                        <td 
+                        <td
                           className="px-6 py-4 whitespace-nowrap text-sm text-gray-500"
                           onClick={() => window.location.href = `#/admin/claim/${claim.id}`}
                         >
@@ -534,13 +527,15 @@ const AdminDashboard = () => {
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap text-right">
                           <div className="flex space-x-2">
-                            {claim.tipoReclamo === 'reembolso' && claim.tipoSiniestro === 'inicial' && claim.numeroReclamoAseguradora && (
+                            {claim.tipoReclamo === 'reembolso' && 
+                             claim.tipoSiniestro === 'inicial' && 
+                             claim.numeroReclamoAseguradora && (
                               <button
                                 onClick={() => handleCreateComplemento(claim)}
                                 className="inline-flex items-center px-2.5 py-1.5 border border-fortex-primary text-xs font-medium rounded text-fortex-primary hover:bg-fortex-primary hover:text-white"
                               >
                                 <SafeIcon icon={FiPlus} className="w-3 h-3 mr-1" />
-                                Complemento
+                                + Complemento
                               </button>
                             )}
                           </div>
@@ -578,9 +573,7 @@ const AdminDashboard = () => {
                             ref={provided.innerRef}
                             {...provided.droppableProps}
                             className={`min-h-96 space-y-3 ${
-                              snapshot.isDraggingOver 
-                                ? 'bg-blue-50 border-2 border-blue-300 border-dashed' 
-                                : ''
+                              snapshot.isDraggingOver ? 'bg-blue-50 border-2 border-blue-300 border-dashed' : ''
                             }`}
                           >
                             {kanbanFilteredClaims
@@ -597,17 +590,14 @@ const AdminDashboard = () => {
                                       {...provided.draggableProps}
                                       {...provided.dragHandleProps}
                                       className={`${
-                                        snapshot.isDragging 
-                                          ? 'transform rotate-5 shadow-lg' 
-                                          : ''
+                                        snapshot.isDragging ? 'transform rotate-5 shadow-lg' : ''
                                       }`}
                                     >
                                       <div className="relative">
-                                        <ClaimCard
-                                          claim={claim}
-                                          isAdmin={true}
-                                        />
-                                        {claim.tipoReclamo === 'reembolso' && claim.tipoSiniestro === 'inicial' && claim.numeroReclamoAseguradora && (
+                                        <ClaimCard claim={claim} isAdmin={true} />
+                                        {claim.tipoReclamo === 'reembolso' && 
+                                         claim.tipoSiniestro === 'inicial' && 
+                                         claim.numeroReclamoAseguradora && (
                                           <button
                                             onClick={(e) => {
                                               e.stopPropagation();
