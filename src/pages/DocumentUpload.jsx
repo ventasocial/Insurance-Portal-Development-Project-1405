@@ -36,19 +36,75 @@ const DocumentUpload = () => {
     }
   };
 
-  const getRequiredDocuments = (tipoSiniestro, tipoReclamo) => {
-    const baseDocuments = [
-      { key: 'avisoAccidente', name: 'Aviso de Accidente/Enfermedad', required: true },
-      { key: 'informeMedico', name: 'Informe Médico', required: true },
-      { key: 'formatoReembolso', name: 'Formato de Reembolso', required: tipoReclamo === 'reembolso' },
-      { key: 'recetasMedicas', name: 'Recetas Médicas', required: false },
-      { key: 'estudiosLaboratorio', name: 'Estudios de Laboratorio e Imagenología', required: false },
-      { key: 'documentosBancarios', name: 'Documentos Bancarios', required: tipoReclamo === 'reembolso' },
-      { key: 'identificacionOficial', name: 'Identificación Oficial (INE)', required: true },
-      { key: 'facturas', name: 'Facturas', required: true }
-    ];
+  const getRequiredDocuments = (tipoReclamo, tipoSiniestro, tipoServicioReembolso, tipoServicioProgramacion, esCirugiaEspecializada) => {
+    let documents = [];
 
-    return baseDocuments.filter(doc => doc.required || tipoSiniestro || tipoReclamo);
+    if (tipoReclamo === 'reembolso') {
+      // Documentos base para reembolso
+      documents = [
+        { key: 'avisoAccidente', name: 'Aviso de Accidente o Enfermedad', required: true },
+        { key: 'formatoReembolso', name: 'Formato de Reembolso', required: true },
+        { key: 'formatoBancario', name: 'Formato Único de Información Bancaria', required: true },
+        { key: 'informeMedico', name: 'Informe Médico', required: true },
+        { key: 'caratulaEstadoCuenta', name: 'Carátula del Estado de Cuenta', required: true },
+        { key: 'identificacionTitular', name: 'Identificación Oficial del Titular de la Cuenta Bancaria', required: true },
+        { key: 'identificacionAsegurado', name: 'Identificación Oficial del Asegurado Afectado o Tutor', required: true },
+        { key: 'facturasReembolso', name: 'Facturas para Reembolso', required: true },
+        { key: 'recetasCorrespondientes', name: 'Recetas correspondientes a las facturas', required: true },
+        { key: 'estudiosCorrespondientes', name: 'Estudios correspondientes a las facturas', required: true }
+      ];
+
+      // Agregar documentos específicos según el tipo de servicio
+      if (tipoServicioReembolso === 'hospitales') {
+        documents.push({ key: 'facturaHospitales', name: 'Factura de Hospitales', required: true });
+      } else if (tipoServicioReembolso === 'honorarios-medicos') {
+        documents.push({ key: 'facturaHonorariosMedicos', name: 'Factura de Honorarios Médicos', required: true });
+      } else if (tipoServicioReembolso === 'estudios-laboratorio') {
+        documents.push(
+          { key: 'facturaEstudiosLab', name: 'Factura de Estudios de Laboratorio e Imagenología', required: true },
+          { key: 'estudiosLaboratorio', name: 'Estudios de Laboratorio e Imagenología', required: true }
+        );
+      } else if (tipoServicioReembolso === 'medicamentos') {
+        documents.push(
+          { key: 'facturaMedicamentos', name: 'Factura de Medicamentos', required: true },
+          { key: 'recetaMedicamentos', name: 'Receta de Medicamentos', required: true }
+        );
+      } else if (tipoServicioReembolso === 'rehabilitacion') {
+        documents.push(
+          { key: 'facturaRehabilitacion', name: 'Factura de Rehabilitación', required: true },
+          { key: 'recetaRehabilitacion', name: 'Recetas de Rehabilitación', required: true },
+          { key: 'carnetAsistencia', name: 'Carnet de Asistencia a Rehabilitación', required: true }
+        );
+      }
+    } else if (tipoReclamo === 'programacion') {
+      // Documentos base para programación
+      documents = [
+        { key: 'avisoAccidente', name: 'Aviso de Accidente o Enfermedad', required: true },
+        { key: 'informeMedico', name: 'Informe Médico', required: true },
+        { key: 'estudiosInforme', name: 'Estudios que sustenten cada informe médico', required: true },
+        { key: 'identificacionAsegurado', name: 'Identificación Oficial del Asegurado', required: true }
+      ];
+
+      // Agregar documentos específicos según el tipo de servicio
+      if (tipoServicioProgramacion === 'cirugia') {
+        if (esCirugiaEspecializada) {
+          documents.push({ key: 'formatoCirugiaEspecializada', name: 'Formato de Cirugía de Traumatología, Ortopedia y Neurocirugía', required: true });
+        }
+      } else if (tipoServicioProgramacion === 'medicamentos') {
+        documents.push({ key: 'recetaMedicamentos', name: 'Recetas de Medicamentos', required: true });
+      } else if (tipoServicioProgramacion === 'rehabilitacion') {
+        documents.push({ key: 'bitacoraMedico', name: 'Bitácora del Médico (incluyendo número de terapias, sesiones y duración)', required: true });
+      }
+    } else if (tipoReclamo === 'maternidad') {
+      // Documentos para maternidad (puedes definir estos según tus necesidades)
+      documents = [
+        { key: 'avisoAccidente', name: 'Aviso de Accidente o Enfermedad', required: true },
+        { key: 'informeMedico', name: 'Informe Médico', required: true },
+        { key: 'identificacionAsegurado', name: 'Identificación Oficial del Asegurado', required: true }
+      ];
+    }
+
+    return documents;
   };
 
   const handleFileUpload = async (file, documentType) => {
@@ -73,40 +129,28 @@ const DocumentUpload = () => {
 
   const getStatusIcon = (status) => {
     switch (status) {
-      case 'approved':
-        return FiCheck;
-      case 'rejected':
-        return FiX;
-      case 'under-review':
-        return FiClock;
-      default:
-        return FiFile;
+      case 'approved': return FiCheck;
+      case 'rejected': return FiX;
+      case 'under-review': return FiClock;
+      default: return FiFile;
     }
   };
 
   const getStatusColor = (status) => {
     switch (status) {
-      case 'approved':
-        return 'text-green-600 bg-green-100';
-      case 'rejected':
-        return 'text-red-600 bg-red-100';
-      case 'under-review':
-        return 'text-blue-600 bg-blue-100';
-      default:
-        return 'text-gray-600 bg-gray-100';
+      case 'approved': return 'text-green-600 bg-green-100';
+      case 'rejected': return 'text-red-600 bg-red-100';
+      case 'under-review': return 'text-blue-600 bg-blue-100';
+      default: return 'text-gray-600 bg-gray-100';
     }
   };
 
   const getStatusText = (status) => {
     switch (status) {
-      case 'approved':
-        return 'Aprobado';
-      case 'rejected':
-        return 'Rechazado';
-      case 'under-review':
-        return 'En Revisión';
-      default:
-        return 'Pendiente';
+      case 'approved': return 'Aprobado';
+      case 'rejected': return 'Rechazado';
+      case 'under-review': return 'En Revisión';
+      default: return 'Pendiente';
     }
   };
 
@@ -123,12 +167,17 @@ const DocumentUpload = () => {
     );
   }
 
-  const requiredDocuments = getRequiredDocuments(claim.tipoSiniestro, claim.tipoReclamo);
+  const requiredDocuments = getRequiredDocuments(
+    claim.tipoReclamo,
+    claim.tipoSiniestro,
+    claim.tipoServicioReembolso,
+    claim.tipoServicioProgramacion,
+    claim.esCirugiaEspecializada
+  );
 
   return (
     <div className="min-h-screen bg-gray-50">
       <Header />
-      
       <main className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <motion.div
           initial={{ opacity: 0, y: 20 }}
@@ -143,12 +192,11 @@ const DocumentUpload = () => {
               <SafeIcon icon={FiArrowLeft} className="w-4 h-4" />
               <span>Volver al formulario</span>
             </button>
-            
             <h2 className="text-3xl font-bold text-gray-900 mb-2">
-              Documentos - Reclamo #{claim.id?.slice(-8)}
+              Documentos - R-{claim.id?.replace('claim-', '').toUpperCase()}
             </h2>
             <p className="text-gray-600">
-              Sube los documentos requeridos para tu reclamo
+              Sube los documentos requeridos para tu reclamo de {claim.tipoReclamo}
             </p>
           </div>
 
@@ -182,7 +230,14 @@ const DocumentUpload = () => {
                           <div className="flex items-center space-x-3">
                             <SafeIcon icon={FiFile} className="w-5 h-5 text-fortex-primary" />
                             <div>
-                              <p className="text-sm font-medium text-gray-900">{file.name}</p>
+                              <a
+                                href={file.url}
+                                target="_blank"
+                                rel="noreferrer"
+                                className="text-sm font-medium text-fortex-primary hover:text-fortex-secondary"
+                              >
+                                {file.name}
+                              </a>
                               <p className="text-xs text-gray-500">
                                 Subido el {new Date(file.uploadedAt).toLocaleDateString()}
                               </p>
@@ -218,85 +273,6 @@ const DocumentUpload = () => {
               );
             })}
           </div>
-
-          {/* Facturas Section */}
-          <motion.div
-            className="mt-8 bg-white rounded-lg shadow-sm p-6"
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.2 }}
-          >
-            <h3 className="text-lg font-semibold text-gray-900 mb-6">
-              Facturas
-            </h3>
-            
-            <div className="space-y-6">
-              {[1, 2, 3].map((facturaNum) => (
-                <div key={facturaNum} className="border border-gray-200 rounded-lg p-4">
-                  <h4 className="font-medium text-gray-900 mb-4">
-                    Factura {facturaNum}
-                  </h4>
-                  
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">
-                        Número de Factura
-                      </label>
-                      <input
-                        type="text"
-                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-fortex-primary focus:border-transparent"
-                        placeholder="Ej: FAC-001"
-                      />
-                    </div>
-                    
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">
-                        Tipo de Proveedor
-                      </label>
-                      <select className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-fortex-primary focus:border-transparent">
-                        <option value="">Seleccionar...</option>
-                        <option value="hospital">Hospital</option>
-                        <option value="medico">Médico</option>
-                        <option value="farmacia">Farmacia</option>
-                        <option value="gabinete">Gabinete</option>
-                        <option value="laboratorio">Laboratorio</option>
-                      </select>
-                    </div>
-                    
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">
-                        Monto
-                      </label>
-                      <input
-                        type="number"
-                        step="0.01"
-                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-fortex-primary focus:border-transparent"
-                        placeholder="0.00"
-                      />
-                    </div>
-                  </div>
-                  
-                  <div className="mb-4">
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      RFC del Emisor
-                    </label>
-                    <input
-                      type="text"
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-fortex-primary focus:border-transparent"
-                      placeholder="RFC del proveedor"
-                    />
-                  </div>
-                  
-                  <DocumentUploadZone
-                    onFileUpload={(file) => handleFileUpload(file, `factura_${facturaNum.toString().padStart(2, '0')}`)}
-                    documentType={`factura_${facturaNum.toString().padStart(2, '0')}`}
-                    acceptedFiles={[]}
-                    maxFiles={1}
-                  />
-                </div>
-              ))}
-            </div>
-          </motion.div>
         </motion.div>
       </main>
     </div>

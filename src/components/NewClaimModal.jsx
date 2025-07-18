@@ -28,6 +28,9 @@ const NewClaimModal = ({ isOpen, onClose, onClaimCreated }) => {
     // Claim info
     tipoSiniestro: '',
     tipoReclamo: '',
+    tipoServicioReembolso: '',
+    tipoServicioProgramacion: '',
+    esCirugiaEspecializada: false,
     // Additional details
     descripcionSiniestro: '',
     fechaSiniestro: ''
@@ -56,6 +59,23 @@ const NewClaimModal = ({ isOpen, onClose, onClaimCreated }) => {
         updatedData.emailAsegurado = prev.email;
       }
       
+      // Reset tipo de servicio when changing tipo de reclamo
+      if (field === 'tipoReclamo') {
+        updatedData.tipoServicioReembolso = '';
+        updatedData.tipoServicioProgramacion = '';
+        updatedData.esCirugiaEspecializada = false;
+        
+        // Reset tipoSiniestro if not reembolso
+        if (value !== 'reembolso') {
+          updatedData.tipoSiniestro = '';
+        }
+      }
+      
+      // Reset checkbox when changing tipo de servicio
+      if (field === 'tipoServicioProgramacion') {
+        updatedData.esCirugiaEspecializada = false;
+      }
+      
       return updatedData;
     });
   };
@@ -63,11 +83,13 @@ const NewClaimModal = ({ isOpen, onClose, onClaimCreated }) => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
+    
     try {
       const newClaim = await claimsService.createClaim(formData);
       toast.success('¡Reclamo creado exitosamente!');
       onClaimCreated(newClaim);
       onClose();
+      
       // Reset form
       setFormData({
         firstName: user?.firstName || '',
@@ -82,6 +104,9 @@ const NewClaimModal = ({ isOpen, onClose, onClaimCreated }) => {
         aseguradora: '',
         tipoSiniestro: '',
         tipoReclamo: '',
+        tipoServicioReembolso: '',
+        tipoServicioProgramacion: '',
+        esCirugiaEspecializada: false,
         descripcionSiniestro: '',
         fechaSiniestro: ''
       });
@@ -306,23 +331,6 @@ const NewClaimModal = ({ isOpen, onClose, onClaimCreated }) => {
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Tipo de Siniestro
-                  </label>
-                  <select
-                    required
-                    value={formData.tipoSiniestro}
-                    onChange={(e) => handleInputChange('tipoSiniestro', e.target.value)}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-fortex-primary focus:border-transparent"
-                  >
-                    <option value="">Seleccionar...</option>
-                    <option value="accidente">Accidente</option>
-                    <option value="enfermedad">Enfermedad</option>
-                    <option value="maternidad">Maternidad</option>
-                    <option value="emergencia">Emergencia</option>
-                  </select>
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
                     Tipo de Reclamo
                   </label>
                   <select
@@ -333,10 +341,88 @@ const NewClaimModal = ({ isOpen, onClose, onClaimCreated }) => {
                   >
                     <option value="">Seleccionar...</option>
                     <option value="reembolso">Reembolso</option>
-                    <option value="pago-directo">Pago Directo</option>
-                    <option value="carta-garantia">Carta Garantía</option>
+                    <option value="programacion">Programación</option>
+                    <option value="maternidad">Maternidad</option>
                   </select>
                 </div>
+
+                {/* Tipo de Siniestro - Solo para Reembolso */}
+                {formData.tipoReclamo === 'reembolso' && (
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Tipo de Siniestro
+                    </label>
+                    <select
+                      required
+                      value={formData.tipoSiniestro}
+                      onChange={(e) => handleInputChange('tipoSiniestro', e.target.value)}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-fortex-primary focus:border-transparent"
+                    >
+                      <option value="">Seleccionar...</option>
+                      <option value="inicial">Inicial</option>
+                      <option value="complemento">Complemento</option>
+                    </select>
+                  </div>
+                )}
+
+                {/* Tipo de Servicio para Reembolso */}
+                {formData.tipoReclamo === 'reembolso' && (
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Tipo de Servicio
+                    </label>
+                    <select
+                      required
+                      value={formData.tipoServicioReembolso}
+                      onChange={(e) => handleInputChange('tipoServicioReembolso', e.target.value)}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-fortex-primary focus:border-transparent"
+                    >
+                      <option value="">Seleccionar...</option>
+                      <option value="rehabilitacion">Rehabilitación</option>
+                      <option value="honorarios-medicos">Honorarios Médicos</option>
+                      <option value="hospitales">Hospitales</option>
+                      <option value="estudios-laboratorio">Estudios de Laboratorio e Imagenología</option>
+                    </select>
+                  </div>
+                )}
+
+                {/* Tipo de Servicio para Programación */}
+                {formData.tipoReclamo === 'programacion' && (
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Tipo de Servicio
+                    </label>
+                    <select
+                      required
+                      value={formData.tipoServicioProgramacion}
+                      onChange={(e) => handleInputChange('tipoServicioProgramacion', e.target.value)}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-fortex-primary focus:border-transparent"
+                    >
+                      <option value="">Seleccionar...</option>
+                      <option value="rehabilitacion">Rehabilitación</option>
+                      <option value="medicamentos">Medicamentos</option>
+                      <option value="cirugia">Cirugía</option>
+                    </select>
+                  </div>
+                )}
+
+                {/* Checkbox para Cirugía Especializada */}
+                {formData.tipoReclamo === 'programacion' && formData.tipoServicioProgramacion === 'cirugia' && (
+                  <div className="col-span-2">
+                    <label className="flex items-center space-x-2">
+                      <input
+                        type="checkbox"
+                        checked={formData.esCirugiaEspecializada}
+                        onChange={(e) => handleInputChange('esCirugiaEspecializada', e.target.checked)}
+                        className="rounded border-gray-300 text-fortex-primary focus:ring-fortex-primary"
+                      />
+                      <span className="text-sm text-gray-700">
+                        Cirugía de Traumatología, Ortopedia o Neurología
+                      </span>
+                    </label>
+                  </div>
+                )}
+
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">
                     Fecha del Siniestro
@@ -350,6 +436,7 @@ const NewClaimModal = ({ isOpen, onClose, onClaimCreated }) => {
                   />
                 </div>
               </div>
+              
               <div className="mt-4">
                 <label className="block text-sm font-medium text-gray-700 mb-2">
                   Descripción del Siniestro

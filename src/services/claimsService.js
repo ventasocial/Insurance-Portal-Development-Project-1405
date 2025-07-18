@@ -27,8 +27,9 @@ const mockClaims = [
     numeroPoliza: 'POL-123456',
     digitoVerificador: '7',
     relacionAsegurado: 'titular',
-    tipoSiniestro: 'accidente',
+    tipoSiniestro: 'inicial',
     tipoReclamo: 'reembolso',
+    tipoServicioReembolso: 'hospitales',
     aseguradora: 'GNP',
     status: 'pending',
     createdAt: '2024-01-15T10:30:00Z',
@@ -48,8 +49,9 @@ const mockClaims = [
     numeroPoliza: 'POL-789012',
     digitoVerificador: '3',
     relacionAsegurado: 'conyuge',
-    tipoSiniestro: 'enfermedad',
-    tipoReclamo: 'pago-directo',
+    tipoSiniestro: 'complemento',
+    tipoReclamo: 'reembolso',
+    tipoServicioReembolso: 'medicamentos',
     aseguradora: 'AXA',
     status: 'verified',
     createdAt: '2024-01-10T14:20:00Z',
@@ -69,8 +71,9 @@ const mockClaims = [
     numeroPoliza: 'POL-345678',
     digitoVerificador: '9',
     relacionAsegurado: 'hijo',
-    tipoSiniestro: 'maternidad',
-    tipoReclamo: 'carta-garantia',
+    tipoReclamo: 'programacion',
+    tipoServicioProgramacion: 'cirugia',
+    esCirugiaEspecializada: true,
     aseguradora: 'Qualitas',
     status: 'sent-to-insurer',
     createdAt: '2024-01-08T16:45:00Z',
@@ -101,8 +104,9 @@ const allMockClaims = [
     numeroPoliza: 'POL-987654',
     digitoVerificador: '2',
     relacionAsegurado: 'titular',
-    tipoSiniestro: 'accidente',
+    tipoSiniestro: 'inicial',
     tipoReclamo: 'reembolso',
+    tipoServicioReembolso: 'honorarios-medicos',
     aseguradora: 'GNP',
     status: 'pending',
     createdAt: '2024-01-12T09:15:00Z',
@@ -122,8 +126,8 @@ const allMockClaims = [
     numeroPoliza: 'POL-555666',
     digitoVerificador: '5',
     relacionAsegurado: 'titular',
-    tipoSiniestro: 'enfermedad',
-    tipoReclamo: 'pago-directo',
+    tipoReclamo: 'programacion',
+    tipoServicioProgramacion: 'medicamentos',
     aseguradora: 'AXA',
     status: 'verified',
     createdAt: '2024-01-05T11:30:00Z',
@@ -143,8 +147,7 @@ const allMockClaims = [
     numeroPoliza: 'POL-777888',
     digitoVerificador: '1',
     relacionAsegurado: 'titular',
-    tipoSiniestro: 'emergencia',
-    tipoReclamo: 'carta-garantia',
+    tipoReclamo: 'maternidad',
     aseguradora: 'Qualitas',
     status: 'sent-to-insurer',
     createdAt: '2024-01-01T13:45:00Z',
@@ -164,8 +167,9 @@ const allMockClaims = [
     numeroPoliza: 'POL-222333',
     digitoVerificador: '4',
     relacionAsegurado: 'titular',
-    tipoSiniestro: 'enfermedad',
+    tipoSiniestro: 'inicial',
     tipoReclamo: 'reembolso',
+    tipoServicioReembolso: 'rehabilitacion',
     aseguradora: 'GNP',
     status: 'archived',
     createdAt: '2023-12-15T08:30:00Z',
@@ -185,8 +189,8 @@ const allMockClaims = [
     numeroPoliza: 'POL-444555',
     digitoVerificador: '8',
     relacionAsegurado: 'titular',
-    tipoSiniestro: 'accidente',
-    tipoReclamo: 'carta-garantia',
+    tipoReclamo: 'programacion',
+    tipoServicioProgramacion: 'rehabilitacion',
     aseguradora: 'AXA',
     status: 'archived',
     createdAt: '2023-12-20T11:15:00Z',
@@ -223,17 +227,16 @@ const mockDocuments = {
         { name: 'formato_reembolso.pdf', url: '#', uploadedAt: '2024-01-15T11:15:00Z' }
       ]
     },
-    identificacionOficial: {
+    identificacionAsegurado: {
       status: 'pending',
       files: [
         { name: 'ine_frente.pdf', url: '#', uploadedAt: '2024-01-15T11:20:00Z' }
       ]
     },
-    facturas: {
+    facturaHospitales: {
       status: 'approved',
       files: [
-        { name: 'factura_hospital.pdf', url: '#', uploadedAt: '2024-01-15T11:25:00Z' },
-        { name: 'factura_medicamentos.pdf', url: '#', uploadedAt: '2024-01-15T11:30:00Z' }
+        { name: 'factura_hospital.pdf', url: '#', uploadedAt: '2024-01-15T11:25:00Z' }
       ]
     }
   },
@@ -250,7 +253,7 @@ const mockDocuments = {
         { name: 'informe_medico_completo.pdf', url: '#', uploadedAt: '2024-01-10T15:00:00Z' }
       ]
     },
-    identificacionOficial: {
+    identificacionAsegurado: {
       status: 'approved',
       files: [
         { name: 'ine_frente_reverso.pdf', url: '#', uploadedAt: '2024-01-11T09:30:00Z' }

@@ -62,7 +62,7 @@ const ClaimCard = ({ claim, isAdmin = false }) => {
   const formatDateTime = (dateString) => {
     if (!dateString) return '';
     const date = new Date(dateString);
-    return format(date, "d 'de' MMMM, yyyy HH:mm", { locale: es });
+    return format(date, "d 'de' MMMM, yyyy h:mm a", { locale: es });
   };
 
   return (
@@ -75,11 +75,11 @@ const ClaimCard = ({ claim, isAdmin = false }) => {
         <div className="flex items-center space-x-3">
           <SafeIcon icon={FiFileText} className="w-8 h-8 text-fortex-primary" />
           <div>
-            <h3 className="text-lg font-semibold text-gray-900">
+            <h3 className="text-sm text-gray-900">
               R-{claimNumber}
             </h3>
             <p className="text-sm text-gray-600">
-              {claim.tipoSiniestro} - {claim.tipoReclamo}
+              {claim.tipoReclamo}
             </p>
           </div>
         </div>
@@ -103,7 +103,7 @@ const ClaimCard = ({ claim, isAdmin = false }) => {
           <span className="font-medium">{claim.aseguradora || 'No especificada'}</span>
         </div>
         <div className="flex justify-between text-sm">
-          <span className="text-gray-600">Fecha:</span>
+          <span className="text-gray-600">Fecha de Creación:</span>
           <span className="font-medium">{new Date(claim.createdAt).toLocaleDateString()}</span>
         </div>
         
