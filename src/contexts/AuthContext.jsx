@@ -14,7 +14,7 @@ export const useAuth = () => {
 export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
-  const [isAdmin, setIsAdmin] = useState(false);
+  const [roles, setRoles] = useState([]);
 
   useEffect(() => {
     const initAuth = async () => {
@@ -26,13 +26,13 @@ export const AuthProvider = ({ children }) => {
           const adminUser = await authService.validateAdminToken(adminToken);
           if (adminUser) {
             setUser(adminUser);
-            setIsAdmin(true);
+            setRoles(['admin', 'operator']);
           }
         } else if (token) {
           const userData = await authService.validateMagicLink(token);
           if (userData) {
             setUser(userData);
-            setIsAdmin(false);
+            setRoles(userData.roles || ['client']);
           }
         }
       } catch (error) {
@@ -49,7 +49,7 @@ export const AuthProvider = ({ children }) => {
     try {
       const userData = await authService.validateMagicLink(token);
       setUser(userData);
-      setIsAdmin(false);
+      setRoles(userData.roles || ['client']);
       localStorage.setItem('fortex_token', token);
       return userData;
     } catch (error) {
@@ -65,10 +65,11 @@ export const AuthProvider = ({ children }) => {
       email: 'demo@cliente.com',
       firstName: 'Juan',
       lastName: 'Pérez',
-      phone: '+52 55 1234 5678'
+      phone: '+52 55 1234 5678',
+      roles: ['client']
     };
     setUser(demoUser);
-    setIsAdmin(false);
+    setRoles(['client']);
     localStorage.setItem('fortex_token', 'demo-token-active');
     return demoUser;
   };
@@ -76,27 +77,38 @@ export const AuthProvider = ({ children }) => {
   const adminLogin = async (credentials) => {
     const adminData = await authService.adminLogin(credentials);
     setUser(adminData.user);
-    setIsAdmin(true);
+    setRoles(['admin', 'operator']);
     localStorage.setItem('fortex_admin_token', adminData.token);
     return adminData;
   };
 
+  const hasRole = (requiredRole) => {
+    return roles.includes(requiredRole);
+  };
+
+  const hasAnyRole = (requiredRoles) => {
+    return requiredRoles.some(role => roles.includes(role));
+  };
+
   const updateUserProfile = (profileData) => {
     setUser(prev => ({ ...prev, ...profileData }));
-    // In production, this would also update localStorage and send to backend
   };
 
   const logout = () => {
     setUser(null);
-    setIsAdmin(false);
+    setRoles([]);
     localStorage.removeItem('fortex_token');
     localStorage.removeItem('fortex_admin_token');
   };
 
   const value = {
     user,
-    isAdmin,
+    roles,
     loading,
+    isAdmin: hasRole('admin'),
+    isOperator: hasRole('operator'),
+    hasRole,
+    hasAnyRole,
     login,
     loginDemo,
     adminLogin,

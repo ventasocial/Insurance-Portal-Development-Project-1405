@@ -14,7 +14,8 @@ export const authService = {
             email: 'cliente@ejemplo.com',
             firstName: 'Juan',
             lastName: 'Pérez',
-            phone: '+52 55 1234 5678'
+            phone: '+52 55 1234 5678',
+            roles: ['client']
           });
         } else {
           reject(new Error('Invalid token'));
@@ -33,9 +34,19 @@ export const authService = {
               id: 'admin-123',
               email: 'admin@fortex.com',
               firstName: 'Administrador',
-              role: 'admin'
+              roles: ['admin', 'operator']
             },
             token: 'admin-token-12345'
+          });
+        } else if (credentials.email === 'operator@fortex.com' && credentials.password === 'operator123') {
+          resolve({
+            user: {
+              id: 'operator-123',
+              email: 'operator@fortex.com',
+              firstName: 'Operador',
+              roles: ['operator']
+            },
+            token: 'operator-token-12345'
           });
         } else {
           reject(new Error('Invalid credentials'));
@@ -53,7 +64,14 @@ export const authService = {
             id: 'admin-123',
             email: 'admin@fortex.com',
             firstName: 'Administrador',
-            role: 'admin'
+            roles: ['admin', 'operator']
+          });
+        } else if (token === 'operator-token-12345') {
+          resolve({
+            id: 'operator-123',
+            email: 'operator@fortex.com',
+            firstName: 'Operador',
+            roles: ['operator']
           });
         } else {
           reject(new Error('Invalid admin token'));

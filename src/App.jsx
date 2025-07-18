@@ -22,45 +22,49 @@ function App() {
             <Routes>
               <Route path="/" element={<Login />} />
               <Route path="/admin" element={<AdminLogin />} />
-              <Route
-                path="/dashboard"
+              
+              {/* Client Routes */}
+              <Route 
+                path="/dashboard" 
                 element={
-                  <ProtectedRoute>
+                  <ProtectedRoute requiredRoles={['client']}>
                     <ClientDashboard />
                   </ProtectedRoute>
-                }
+                } 
               />
-              <Route
-                path="/claim/:claimId"
+              <Route 
+                path="/claim/:claimId" 
                 element={
-                  <ProtectedRoute>
+                  <ProtectedRoute requiredRoles={['client']}>
                     <ClaimForm />
                   </ProtectedRoute>
-                }
+                } 
               />
-              <Route
-                path="/documents/:claimId"
+              <Route 
+                path="/documents/:claimId" 
                 element={
-                  <ProtectedRoute>
+                  <ProtectedRoute requiredRoles={['client']}>
                     <DocumentUpload />
                   </ProtectedRoute>
-                }
+                } 
               />
-              <Route
-                path="/admin/dashboard"
+
+              {/* Admin Routes */}
+              <Route 
+                path="/admin/dashboard" 
                 element={
-                  <ProtectedRoute admin>
+                  <ProtectedRoute requiredRoles={['admin', 'operator']}>
                     <AdminDashboard />
                   </ProtectedRoute>
-                }
+                } 
               />
-              <Route
-                path="/admin/claim/:claimId"
+              <Route 
+                path="/admin/claim/:claimId" 
                 element={
-                  <ProtectedRoute admin>
+                  <ProtectedRoute requiredRoles={['admin', 'operator']}>
                     <AdminClaimDetail />
                   </ProtectedRoute>
-                }
+                } 
               />
             </Routes>
             <Toaster position="top-right" />
