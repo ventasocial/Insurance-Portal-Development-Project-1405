@@ -58,7 +58,6 @@ const AdminClaimDetail = () => {
         claimNumber: claim.id?.replace('claim-', '').toUpperCase(),
         customerName: claim.nombreAsegurado
       });
-      
       toast.success('Estatus enviado al asegurado correctamente');
     } catch (error) {
       toast.error('Error al enviar el estatus');
@@ -84,23 +83,23 @@ const AdminClaimDetail = () => {
   };
 
   const handleCommentChange = (documentType, value) => {
-    setDocumentComments(prev => ({
-      ...prev,
-      [documentType]: value
-    }));
+    setDocumentComments(prev => ({ ...prev, [documentType]: value }));
   };
 
   const handleDocumentStatus = async (documentType, status) => {
     setProcessingDocId(documentType);
     const comments = documentComments[documentType] || '';
     
-    // If no comments and trying to approve or reject, set to pending
-    const finalStatus = (comments.trim() === '' && (status === 'approved' || status === 'rejected')) 
-      ? 'pending' 
-      : status;
-    
+    // Si es rechazado y no hay comentarios, solicitar comentarios
+    if (status === 'rejected' && comments.trim() === '') {
+      toast.error('Debes agregar un comentario para rechazar el documento');
+      setProcessingDocId(null);
+      return;
+    }
+
+    // Aprobado puede ir sin comentarios
     try {
-      await claimsService.updateDocumentStatus(claimId, documentType, finalStatus, comments);
+      await claimsService.updateDocumentStatus(claimId, documentType, status, comments);
       await loadDocuments(claimId);
       
       // Check if all documents are now approved to update claim status
@@ -116,7 +115,7 @@ const AdminClaimDetail = () => {
         }
       }
       
-      toast.success(`Documento ${finalStatus === 'approved' ? 'aprobado' : (finalStatus === 'rejected' ? 'rechazado' : 'pendiente')} correctamente`);
+      toast.success(`Documento ${status === 'approved' ? 'aprobado' : (status === 'rejected' ? 'rechazado' : 'pendiente')} correctamente`);
     } catch (error) {
       toast.error('Error al actualizar el estado del documento');
       console.error('Document status update error:', error);
@@ -217,25 +216,27 @@ const AdminClaimDetail = () => {
                 </p>
                 <div className="text-sm text-gray-500 mt-1 flex items-center">
                   <SafeIcon icon={FiClock} className="w-3 h-3 mr-1" />
-                  <span>Última edición: {formatDateTime(claim.updatedAt)} por {claim.lastEditedBy || 'Usuario del sistema'}</span>
+                  <span>Editado: {formatDateTime(claim.updatedAt)} por {claim.lastEditedBy || 'Usuario del sistema'}</span>
                 </div>
               </div>
               <button
                 onClick={isInInsurer ? handleArchiveClaim : handleSendStatus}
                 disabled={loading || sendingStatus}
                 className={`flex items-center space-x-2 px-6 py-3 rounded-lg font-medium transition-colors disabled:opacity-50 ${
-                  isInInsurer 
-                    ? 'bg-red-600 hover:bg-red-700 text-white' 
+                  isInInsurer
+                    ? 'bg-red-600 hover:bg-red-700 text-white'
                     : 'bg-fortex-primary hover:bg-fortex-secondary text-white'
                 }`}
-                style={isInInsurer ? { backgroundColor: '#e33333' } : {}}
+                style={isInInsurer ? {backgroundColor: '#e33333'} : {}}
               >
-                <SafeIcon icon={isInInsurer ? FiArchive : FiSend} className="w-4 h-4" />
+                <SafeIcon
+                  icon={isInInsurer ? FiArchive : FiSend}
+                  className="w-4 h-4"
+                />
                 <span>
-                  {loading || sendingStatus 
-                    ? (isInInsurer ? 'Archivando...' : 'Enviando...') 
-                    : (isInInsurer ? 'Archivar Tarjeta' : 'Enviar Estatus al Asegurado')
-                  }
+                  {loading || sendingStatus
+                    ? (isInInsurer ? 'Archivando...' : 'Enviando...')
+                    : (isInInsurer ? 'Archivar Tarjeta' : 'Enviar Estatus al Asegurado')}
                 </span>
               </button>
             </div>
@@ -285,6 +286,7 @@ const AdminClaimDetail = () => {
                     </p>
                   </div>
                 </div>
+
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">
                     Relación con el Asegurado
@@ -293,6 +295,39 @@ const AdminClaimDetail = () => {
                     {claim.relacionAsegurado || 'No especificada'}
                   </p>
                 </div>
+
+                {/* Número de Reclamo de la Aseguradora (solo para reembolso/inicial) */}
+                {claim.tipoReclamo === 'reembolso' && claim.tipoSiniestro === 'inicial' && (
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Número de Reclamo de la Aseguradora
+                    </label>
+                    <input
+                      type="text"
+                      value={claim.numeroReclamoAseguradora || ''}
+                      onChange={(e) => {
+                        const updatedClaim = {...claim, numeroReclamoAseguradora: e.target.value};
+                        setClaim(updatedClaim);
+                        claimsService.updateClaim(claimId, {numeroReclamoAseguradora: e.target.value});
+                      }}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-fortex-primary focus:border-transparent"
+                      placeholder="Ingrese el número proporcionado por la aseguradora"
+                    />
+                  </div>
+                )}
+
+                {/* Número de Reclamo (para complemento) */}
+                {claim.tipoReclamo === 'reembolso' && claim.tipoSiniestro === 'complemento' && (
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Número de Reclamo
+                    </label>
+                    <p className="text-sm text-gray-900 bg-gray-50 px-3 py-2 rounded">
+                      {claim.numeroReclamo || 'No especificado'}
+                    </p>
+                  </div>
+                )}
+
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1 flex items-center">
                     <SafeIcon icon={FiCalendar} className="w-4 h-4 mr-1" />
@@ -362,10 +397,20 @@ const AdminClaimDetail = () => {
 
           {/* Documents Section */}
           <div className="mt-8 bg-white rounded-lg shadow-sm">
-            <div className="px-6 py-4 border-b border-gray-200">
+            <div className="px-6 py-4 border-b border-gray-200 flex justify-between items-center">
               <h3 className="text-lg font-semibold text-gray-900">
                 Documentos del Reclamo
               </h3>
+              <button
+                onClick={handleSendStatus}
+                disabled={loading || sendingStatus}
+                className="flex items-center space-x-2 px-6 py-3 bg-fortex-primary text-white rounded-lg hover:bg-fortex-secondary transition-colors disabled:opacity-50"
+              >
+                <SafeIcon icon={FiSend} className="w-4 h-4" />
+                <span>
+                  {sendingStatus ? 'Enviando...' : 'Enviar Estatus al Asegurado'}
+                </span>
+              </button>
             </div>
             <div className="p-6">
               {Object.keys(documents).length > 0 ? (
@@ -383,10 +428,10 @@ const AdminClaimDetail = () => {
                           Archivos
                         </th>
                         <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                          Comentarios para el Asegurado
+                          Acciones
                         </th>
                         <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                          Acciones
+                          Comentarios para el Asegurado
                         </th>
                       </tr>
                     </thead>
@@ -406,9 +451,9 @@ const AdminClaimDetail = () => {
                               {docInfo.files && docInfo.files.map((file, idx) => (
                                 <div key={idx} className="flex items-center space-x-2 text-sm">
                                   <SafeIcon icon={FiFileText} className="w-4 h-4 text-gray-500" />
-                                  <a 
-                                    href={file.url} 
-                                    target="_blank" 
+                                  <a
+                                    href={file.url}
+                                    target="_blank"
                                     rel="noreferrer"
                                     className="text-fortex-primary hover:text-fortex-secondary truncate max-w-xs"
                                   >
@@ -422,19 +467,6 @@ const AdminClaimDetail = () => {
                                   </button>
                                 </div>
                               ))}
-                            </div>
-                          </td>
-                          <td className="px-6 py-4">
-                            <textarea
-                              value={documentComments[docType] || ''}
-                              onChange={(e) => handleCommentChange(docType, e.target.value)}
-                              placeholder="Comentarios para el asegurado..."
-                              className="w-full px-2 py-1 text-sm border border-gray-300 rounded focus:ring-2 focus:ring-fortex-primary focus:border-transparent"
-                              rows={2}
-                            />
-                            <div className="text-xs text-gray-500 mt-1">
-                              {documentComments[docType]?.trim() === '' && 
-                                'El documento quedará como "Pendiente" sin comentarios'}
                             </div>
                           </td>
                           <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium space-x-2">
@@ -458,11 +490,23 @@ const AdminClaimDetail = () => {
                                   ? 'bg-red-100 text-red-700'
                                   : 'bg-gray-100 text-gray-700 hover:bg-red-100 hover:text-red-700'
                               }`}
-                              style={docInfo.status === 'rejected' ? { backgroundColor: '#fee2e2', color: '#b91c1c' } : {}}
+                              style={docInfo.status === 'rejected' ? {backgroundColor: '#fee2e2', color: '#b91c1c'} : {}}
                             >
                               <SafeIcon icon={FiXCircle} className="w-4 h-4 mr-1" />
                               Rechazado
                             </button>
+                          </td>
+                          <td className="px-6 py-4">
+                            <textarea
+                              value={documentComments[docType] || ''}
+                              onChange={(e) => handleCommentChange(docType, e.target.value)}
+                              placeholder="Comentarios para el asegurado..."
+                              className="w-full px-2 py-1 text-sm border border-gray-300 rounded focus:ring-2 focus:ring-fortex-primary focus:border-transparent"
+                              rows={2}
+                            />
+                            <div className="text-xs text-gray-500 mt-1">
+                              {documentComments[docType]?.trim() === '' && 'El documento quedará como "Pendiente" sin comentarios'}
+                            </div>
                           </td>
                         </tr>
                       ))}

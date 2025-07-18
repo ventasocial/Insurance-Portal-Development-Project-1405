@@ -30,8 +30,22 @@ const ClaimForm = () => {
     setFormData(prev => ({ ...prev, [field]: value }));
   };
 
+  // Validación de teléfono
+  const validatePhone = (phone) => {
+    // Formato esperado: +52 81 1234 5678 o variaciones similares
+    const regex = /^\+\d{2}\s?\d{2}\s?\d{4}\s?\d{4}$/;
+    return regex.test(phone);
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
+    
+    // Validar número de teléfono
+    if (!validatePhone(formData.phone)) {
+      toast.error('El número de WhatsApp debe tener el formato: +52 81 1234 5678');
+      return;
+    }
+    
     setLoading(true);
     try {
       await claimsService.updateClaim(claimId, formData);
@@ -58,7 +72,7 @@ const ClaimForm = () => {
   }
 
   // Extract just the number part from claim ID
-  const claimNumber = claim.id?.replace('claim-', '');
+  const claimNumber = claim.id?.replace('claim-', '').toUpperCase();
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -126,6 +140,9 @@ const ClaimForm = () => {
                     onChange={(e) => handleInputChange('phone', e.target.value)}
                     className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-fortex-primary focus:border-transparent"
                   />
+                  <small className="text-xs text-gray-500 mt-1 block">
+                    Formato: +52 81 1234 5678
+                  </small>
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -225,10 +242,8 @@ const ClaimForm = () => {
                     required
                   >
                     <option value="">Seleccionar...</option>
-                    <option value="accidente">Accidente</option>
-                    <option value="enfermedad">Enfermedad</option>
-                    <option value="maternidad">Maternidad</option>
-                    <option value="emergencia">Emergencia</option>
+                    <option value="inicial">Inicial</option>
+                    <option value="complemento">Complemento</option>
                   </select>
                 </div>
                 <div>
@@ -243,10 +258,43 @@ const ClaimForm = () => {
                   >
                     <option value="">Seleccionar...</option>
                     <option value="reembolso">Reembolso</option>
-                    <option value="pago-directo">Pago Directo</option>
-                    <option value="carta-garantia">Carta Garantía</option>
+                    <option value="programacion">Programación</option>
+                    <option value="maternidad">Maternidad</option>
                   </select>
                 </div>
+
+                {/* Número de Reclamo de la Aseguradora (solo para reembolso/inicial) - Solo visible */}
+                {formData.tipoReclamo === 'reembolso' && formData.tipoSiniestro === 'inicial' && (
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Número de Reclamo de la Aseguradora
+                    </label>
+                    <input
+                      type="text"
+                      value={formData.numeroReclamoAseguradora || claim.numeroReclamoAseguradora || ''}
+                      disabled
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg bg-gray-50 text-gray-600"
+                      placeholder="Asignado por el operador"
+                    />
+                  </div>
+                )}
+
+                {/* Número de Reclamo (para complemento) */}
+                {formData.tipoReclamo === 'reembolso' && formData.tipoSiniestro === 'complemento' && (
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Número de Reclamo
+                    </label>
+                    <input
+                      type="text"
+                      value={formData.numeroReclamo || claim.numeroReclamo || ''}
+                      onChange={(e) => handleInputChange('numeroReclamo', e.target.value)}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-fortex-primary focus:border-transparent"
+                      placeholder="Número Proporcionado por la Aseguradora"
+                      required
+                    />
+                  </div>
+                )}
               </div>
 
               <div className="flex items-center justify-between pt-6 border-t border-gray-200">

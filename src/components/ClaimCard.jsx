@@ -106,17 +106,17 @@ const ClaimCard = ({ claim, isAdmin = false }) => {
           <span className="text-gray-600">Fecha de Creación:</span>
           <span className="font-medium">{new Date(claim.createdAt).toLocaleDateString()}</span>
         </div>
-        
+
         {isAdmin && (
           <div className="flex justify-between text-sm text-gray-500 pt-2 border-t border-gray-100 mt-2">
             <div className="flex items-center">
               <SafeIcon icon={FiClock} className="w-3 h-3 mr-1" />
-              <span>Última edición:</span>
+              <span>Editado:</span>
             </div>
-            <span>{formatDateTime(claim.updatedAt)}</span>
+            <span className="ml-1">{formatDateTime(claim.updatedAt)}</span>
           </div>
         )}
-        
+
         {isAdmin && claim.lastEditedBy && (
           <div className="flex justify-between text-sm text-gray-500">
             <div className="flex items-center">

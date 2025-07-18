@@ -15,7 +15,6 @@ const { FiFilter, FiSearch, FiClock, FiList, FiPlus } = FiIcons;
 const AdminDashboard = () => {
   const { claims, loading, updateClaimStatus, fetchClaims } = useClaims();
   const [searchTerm, setSearchTerm] = useState('');
-  const [filterStatus, setFilterStatus] = useState('all');
   const [viewMode, setViewMode] = useState('kanban'); // 'kanban' or 'table'
   const [showNewClaimModal, setShowNewClaimModal] = useState(false);
   const [filters, setFilters] = useState([
@@ -53,9 +52,10 @@ const AdminDashboard = () => {
     return claims.filter(claim => 
       claim.status === status && 
       claim.status !== 'archived' && // Don't show archived claims
-      (searchTerm === '' || 
-        claim.nombreAsegurado?.toLowerCase().includes(searchTerm.toLowerCase()) || 
-        claim.email?.toLowerCase().includes(searchTerm.toLowerCase()) || 
+      (
+        searchTerm === '' || 
+        claim.nombreAsegurado?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        claim.email?.toLowerCase().includes(searchTerm.toLowerCase()) ||
         claim.numeroPoliza?.toLowerCase().includes(searchTerm.toLowerCase()) ||
         claim.aseguradora?.toLowerCase().includes(searchTerm.toLowerCase())
       )
@@ -76,7 +76,6 @@ const AdminDashboard = () => {
         if (filter.field === 'date') {
           const claimDate = new Date(claim.createdAt);
           const filterDate = new Date(filter.value);
-          
           if (filter.dateFilter === 'after') {
             return claimDate >= filterDate;
           } else {
@@ -88,10 +87,8 @@ const AdminDashboard = () => {
         if (typeof fieldValue === 'string') {
           fieldValue = fieldValue.toLowerCase();
         }
-        
         const filterValue = filter.value.toLowerCase();
         const matches = fieldValue && fieldValue.includes(filterValue);
-        
         return filter.include ? matches : !matches;
       });
     });
@@ -99,11 +96,12 @@ const AdminDashboard = () => {
 
   const onDragEnd = async (result) => {
     const { destination, source, draggableId } = result;
-
+    
     if (!destination) return;
     if (destination.droppableId === source.droppableId && destination.index === source.index) return;
-
+    
     const newStatus = destination.droppableId;
+    
     try {
       await updateClaimStatus(draggableId, newStatus);
       toast.success('Estado del reclamo actualizado');
@@ -124,10 +122,7 @@ const AdminDashboard = () => {
     return <LoadingSpinner />;
   }
 
-  const filteredClaims = filterStatus === 'all' 
-    ? claims.filter(claim => claim.status !== 'archived')
-    : claims.filter(claim => claim.status === filterStatus && claim.status !== 'archived');
-
+  const filteredClaims = claims.filter(claim => claim.status !== 'archived');
   const tableFilteredClaims = applyFilters(filteredClaims);
   const kanbanFilteredClaims = applyFilters(claims.filter(claim => claim.status !== 'archived'));
 
@@ -203,8 +198,8 @@ const AdminDashboard = () => {
                 <button
                   onClick={() => setViewMode('kanban')}
                   className={`px-3 py-2 rounded-lg flex items-center ${
-                    viewMode === 'kanban' 
-                      ? 'bg-fortex-primary text-white' 
+                    viewMode === 'kanban'
+                      ? 'bg-fortex-primary text-white'
                       : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
                   }`}
                 >
@@ -214,8 +209,8 @@ const AdminDashboard = () => {
                 <button
                   onClick={() => setViewMode('table')}
                   className={`px-3 py-2 rounded-lg flex items-center ${
-                    viewMode === 'table' 
-                      ? 'bg-fortex-primary text-white' 
+                    viewMode === 'table'
+                      ? 'bg-fortex-primary text-white'
                       : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
                   }`}
                 >
@@ -225,35 +220,19 @@ const AdminDashboard = () => {
               </div>
               
               {viewMode === 'kanban' && (
-                <div className="flex flex-col sm:flex-row space-y-4 sm:space-y-0 sm:space-x-4">
-                  <div className="flex-1">
-                    <div className="relative">
-                      <SafeIcon icon={FiSearch} className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
-                      <input
-                        type="text"
-                        placeholder="Buscar por nombre, email, póliza o aseguradora..."
-                        value={searchTerm}
-                        onChange={(e) => setSearchTerm(e.target.value)}
-                        className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-fortex-primary focus:border-transparent"
-                      />
-                    </div>
-                  </div>
-                  <div className="sm:w-48">
-                    <div className="relative">
-                      <SafeIcon icon={FiFilter} className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
-                      <select
-                        value={filterStatus}
-                        onChange={(e) => setFilterStatus(e.target.value)}
-                        className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-fortex-primary focus:border-transparent"
-                      >
-                        <option value="all">Todos los estados</option>
-                        {columns.map((column) => (
-                          <option key={column.id} value={column.status}>
-                            {column.title}
-                          </option>
-                        ))}
-                      </select>
-                    </div>
+                <div className="flex-1 sm:ml-4">
+                  <div className="relative">
+                    <SafeIcon
+                      icon={FiSearch}
+                      className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5"
+                    />
+                    <input
+                      type="text"
+                      placeholder="Buscar por nombre, email, póliza o aseguradora..."
+                      value={searchTerm}
+                      onChange={(e) => setSearchTerm(e.target.value)}
+                      className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-fortex-primary focus:border-transparent"
+                    />
                   </div>
                 </div>
               )}
@@ -268,7 +247,7 @@ const AdminDashboard = () => {
                       {filter.label}
                     </label>
                     {filter.field !== 'date' ? (
-                      <select 
+                      <select
                         value={filter.include ? 'include' : 'exclude'}
                         onChange={(e) => handleFilterChange(index, 'include', e.target.value === 'include')}
                         className="text-xs px-2 py-1 border border-gray-300 rounded"
@@ -277,7 +256,7 @@ const AdminDashboard = () => {
                         <option value="exclude">Excluir</option>
                       </select>
                     ) : (
-                      <select 
+                      <select
                         value={filter.dateFilter || 'after'}
                         onChange={(e) => handleFilterChange(index, 'dateFilter', e.target.value)}
                         className="text-xs px-2 py-1 border border-gray-300 rounded"
@@ -287,6 +266,7 @@ const AdminDashboard = () => {
                       </select>
                     )}
                   </div>
+                  
                   {filter.field === 'date' ? (
                     <input
                       type="date"
@@ -343,7 +323,7 @@ const AdminDashboard = () => {
                   </thead>
                   <tbody className="bg-white divide-y divide-gray-200">
                     {tableFilteredClaims.map((claim) => (
-                      <tr 
+                      <tr
                         key={claim.id}
                         className="hover:bg-gray-50 cursor-pointer"
                         onClick={() => window.location.href = `#/admin/claim/${claim.id}`}
@@ -365,17 +345,25 @@ const AdminDashboard = () => {
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap">
                           <span className={`px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full ${
-                            claim.status === 'pending' ? 'bg-yellow-100 text-yellow-800' :
-                            claim.status === 'verified' ? 'bg-green-100 text-green-800' :
-                            claim.status === 'rejected' ? 'bg-red-100 text-red-800' :
-                            claim.status === 'sent-to-insurer' ? 'bg-blue-100 text-blue-800' :
-                            'bg-gray-100 text-gray-800'
+                            claim.status === 'pending' 
+                              ? 'bg-yellow-100 text-yellow-800'
+                              : claim.status === 'verified' 
+                                ? 'bg-green-100 text-green-800'
+                                : claim.status === 'rejected' 
+                                  ? 'bg-red-100 text-red-800'
+                                  : claim.status === 'sent-to-insurer' 
+                                    ? 'bg-blue-100 text-blue-800'
+                                    : 'bg-gray-100 text-gray-800'
                           }`}>
-                            {claim.status === 'pending' ? 'Pendiente' :
-                             claim.status === 'verified' ? 'Aprobado' :
-                             claim.status === 'rejected' ? 'Rechazado' :
-                             claim.status === 'sent-to-insurer' ? 'Enviado' :
-                             claim.status}
+                            {claim.status === 'pending' 
+                              ? 'Pendiente'
+                              : claim.status === 'verified' 
+                                ? 'Aprobado'
+                                : claim.status === 'rejected' 
+                                  ? 'Rechazado'
+                                  : claim.status === 'sent-to-insurer' 
+                                    ? 'Enviado'
+                                    : claim.status}
                           </span>
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
@@ -403,7 +391,11 @@ const AdminDashboard = () => {
               <DragDropContext onDragEnd={onDragEnd}>
                 <div className="flex justify-center gap-6" style={{ minWidth: `${columns.length * 350}px` }}>
                   {columns.map((column) => (
-                    <div key={column.id} className="bg-gray-100 rounded-lg p-4" style={{ minWidth: '350px', flex: '0 0 350px' }}>
+                    <div
+                      key={column.id}
+                      className="bg-gray-100 rounded-lg p-4"
+                      style={{ minWidth: '350px', flex: '0 0 350px' }}
+                    >
                       <h3 className="font-semibold text-gray-900 mb-4 text-center">
                         {column.title}
                       </h3>
@@ -412,22 +404,39 @@ const AdminDashboard = () => {
                           <div
                             ref={provided.innerRef}
                             {...provided.droppableProps}
-                            className={`min-h-96 space-y-3 ${snapshot.isDraggingOver ? 'bg-blue-50 border-2 border-blue-300 border-dashed' : ''}`}
+                            className={`min-h-96 space-y-3 ${
+                              snapshot.isDraggingOver 
+                                ? 'bg-blue-50 border-2 border-blue-300 border-dashed' 
+                                : ''
+                            }`}
                           >
-                            {kanbanFilteredClaims.filter(claim => claim.status === column.status).map((claim, index) => (
-                              <Draggable key={claim.id} draggableId={claim.id} index={index}>
-                                {(provided, snapshot) => (
-                                  <div
-                                    ref={provided.innerRef}
-                                    {...provided.draggableProps}
-                                    {...provided.dragHandleProps}
-                                    className={`${snapshot.isDragging ? 'transform rotate-5 shadow-lg' : ''}`}
-                                  >
-                                    <ClaimCard claim={claim} isAdmin={true} />
-                                  </div>
-                                )}
-                              </Draggable>
-                            ))}
+                            {kanbanFilteredClaims
+                              .filter(claim => claim.status === column.status)
+                              .map((claim, index) => (
+                                <Draggable
+                                  key={claim.id}
+                                  draggableId={claim.id}
+                                  index={index}
+                                >
+                                  {(provided, snapshot) => (
+                                    <div
+                                      ref={provided.innerRef}
+                                      {...provided.draggableProps}
+                                      {...provided.dragHandleProps}
+                                      className={`${
+                                        snapshot.isDragging 
+                                          ? 'transform rotate-5 shadow-lg' 
+                                          : ''
+                                      }`}
+                                    >
+                                      <ClaimCard
+                                        claim={claim}
+                                        isAdmin={true}
+                                      />
+                                    </div>
+                                  )}
+                                </Draggable>
+                              ))}
                             {provided.placeholder}
                           </div>
                         )}
