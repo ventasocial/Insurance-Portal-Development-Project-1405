@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 import Header from '../components/Header';
 import DocumentUploadZone from '../components/DocumentUploadZone';
 import { useClaims } from '../contexts/ClaimsContext';
@@ -9,7 +9,7 @@ import * as FiIcons from 'react-icons/fi';
 import SafeIcon from '../common/SafeIcon';
 import toast from 'react-hot-toast';
 
-const { FiArrowLeft, FiFile, FiCheck, FiX, FiClock, FiDownload } = FiIcons;
+const { FiArrowLeft, FiFile, FiCheck, FiX, FiClock, FiDownload, FiArchive } = FiIcons;
 
 const DocumentUpload = () => {
   const { claimId } = useParams();
@@ -18,6 +18,7 @@ const DocumentUpload = () => {
   const [claim, setClaim] = useState(null);
   const [documents, setDocuments] = useState({});
   const [loading, setLoading] = useState(false);
+  const [showArchiveConfirm, setShowArchiveConfirm] = useState(false);
 
   useEffect(() => {
     const currentClaim = claims.find(c => c.id === claimId);
@@ -26,6 +27,12 @@ const DocumentUpload = () => {
       loadDocuments(currentClaim);
     }
   }, [claimId, claims]);
+
+  // Función para capitalizar la primera letra
+  const capitalizeFirstLetter = (string) => {
+    if (!string) return '';
+    return string.charAt(0).toUpperCase() + string.slice(1);
+  };
 
   const loadDocuments = async (claimData) => {
     try {
@@ -154,6 +161,21 @@ const DocumentUpload = () => {
     }
   };
 
+  const handleArchiveClaim = async () => {
+    setLoading(true);
+    try {
+      await claimsService.updateClaimStatus(claimId, 'archived');
+      toast.success('Reclamo archivado correctamente');
+      navigate('/dashboard');
+    } catch (error) {
+      toast.error('Error al archivar el reclamo');
+      console.error('Archive error:', error);
+    } finally {
+      setLoading(false);
+      setShowArchiveConfirm(false);
+    }
+  };
+
   if (!claim) {
     return (
       <div className="min-h-screen bg-gray-50">
@@ -185,18 +207,27 @@ const DocumentUpload = () => {
           transition={{ duration: 0.5 }}
         >
           <div className="mb-8">
-            <button
-              onClick={() => navigate(`/claim/${claimId}`)}
-              className="flex items-center space-x-2 text-fortex-primary hover:text-fortex-secondary mb-4"
-            >
-              <SafeIcon icon={FiArrowLeft} className="w-4 h-4" />
-              <span>Volver al formulario</span>
-            </button>
+            <div className="flex justify-between items-center">
+              <button
+                onClick={() => navigate(`/claim/${claimId}`)}
+                className="flex items-center space-x-2 text-fortex-primary hover:text-fortex-secondary mb-4"
+              >
+                <SafeIcon icon={FiArrowLeft} className="w-4 h-4" />
+                <span>Volver al formulario</span>
+              </button>
+              <button
+                onClick={() => setShowArchiveConfirm(true)}
+                className="flex items-center space-x-2 px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg transition-colors"
+              >
+                <SafeIcon icon={FiArchive} className="w-4 h-4" />
+                <span>Archivar</span>
+              </button>
+            </div>
             <h2 className="text-3xl font-bold text-gray-900 mb-2">
               Documentos - R-{claim.id?.replace('claim-', '').toUpperCase()}
             </h2>
             <p className="text-gray-600">
-              Sube los documentos requeridos para tu reclamo de {claim.tipoReclamo}
+              Sube los documentos requeridos para tu reclamo de {capitalizeFirstLetter(claim.tipoReclamo)}
             </p>
           </div>
 
@@ -204,7 +235,6 @@ const DocumentUpload = () => {
             {requiredDocuments.map((docType) => {
               const status = getDocumentStatus(docType.key);
               const doc = documents[docType.key];
-              
               return (
                 <motion.div
                   key={docType.key}
@@ -252,7 +282,13 @@ const DocumentUpload = () => {
                         </div>
                       ))}
                     </div>
-                  ) : null}
+                  ) : (
+                    <div className="mb-4 p-3 bg-gray-50 border border-gray-200 rounded-lg">
+                      <p className="text-sm text-gray-600">
+                        <strong>Estado:</strong> Pendiente de subir documento
+                      </p>
+                    </div>
+                  )}
 
                   {status === 'rejected' && doc?.comments && (
                     <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg">
@@ -275,6 +311,45 @@ const DocumentUpload = () => {
           </div>
         </motion.div>
       </main>
+
+      {/* Modal de confirmación para archivar */}
+      <AnimatePresence>
+        {showArchiveConfirm && (
+          <motion.div
+            className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+          >
+            <motion.div
+              className="bg-white rounded-lg shadow-xl w-full max-w-md p-6"
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.95 }}
+            >
+              <h3 className="text-lg font-bold text-gray-900 mb-4">Confirmar archivo</h3>
+              <p className="text-gray-600 mb-6">
+                ¿Estás seguro que deseas archivar este reclamo? Esta acción no se puede deshacer.
+              </p>
+              <div className="flex justify-end space-x-4">
+                <button
+                  onClick={() => setShowArchiveConfirm(false)}
+                  className="px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors"
+                >
+                  Cancelar
+                </button>
+                <button
+                  onClick={handleArchiveClaim}
+                  disabled={loading}
+                  className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors disabled:opacity-50"
+                >
+                  {loading ? 'Archivando...' : 'Archivar reclamo'}
+                </button>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 };

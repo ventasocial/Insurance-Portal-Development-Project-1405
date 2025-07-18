@@ -16,6 +16,7 @@ const ClientDashboard = () => {
   const { claims, loading, fetchClaims } = useClaims();
   const [showNewClaimModal, setShowNewClaimModal] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
+  const [newClaimData, setNewClaimData] = useState(null);
   const [filters, setFilters] = useState({
     status: '',
     tipoReclamo: '',
@@ -28,6 +29,7 @@ const ClientDashboard = () => {
   };
 
   const handleNewClaim = () => {
+    setNewClaimData(null);
     setShowNewClaimModal(true);
   };
 
@@ -53,15 +55,15 @@ const ClientDashboard = () => {
       numeroReclamo: claim.numeroReclamoAseguradora || ''
     };
     
-    claimsService.createClaim(complementoData)
-      .then(newClaim => {
-        toast.success('Reclamo complemento creado exitosamente');
-        fetchClaims();
-      })
-      .catch(error => {
-        toast.error('Error al crear reclamo complemento');
-        console.error('Error creating complemento:', error);
-      });
+    // Establecer los datos para el nuevo reclamo y abrir el modal
+    setNewClaimData(complementoData);
+    setShowNewClaimModal(true);
+  };
+
+  // Función para capitalizar la primera letra
+  const capitalizeFirstLetter = (string) => {
+    if (!string) return '';
+    return string.charAt(0).toUpperCase() + string.slice(1);
   };
 
   if (loading) {
@@ -119,13 +121,6 @@ const ClientDashboard = () => {
                   Bienvenido a tu portal de reclamos de seguros
                 </p>
               </div>
-              <button
-                onClick={handleNewClaim}
-                className="flex items-center space-x-2 px-4 py-2 bg-fortex-primary text-white rounded-lg hover:bg-fortex-secondary transition-colors"
-              >
-                <SafeIcon icon={FiPlus} className="w-4 h-4" />
-                <span>Nuevo Reclamo</span>
-              </button>
             </div>
           </div>
 
@@ -166,7 +161,7 @@ const ClientDashboard = () => {
                               ? 'Rechazado'
                               : status === 'sent-to-insurer' 
                                 ? 'Enviado a Aseguradora'
-                                : status}
+                                : capitalizeFirstLetter(status)}
                       </option>
                     ))}
                   </select>
@@ -182,7 +177,7 @@ const ClientDashboard = () => {
                   >
                     <option value="">Todos</option>
                     {tipoReclamoOptions.map(tipo => (
-                      <option key={tipo} value={tipo}>{tipo}</option>
+                      <option key={tipo} value={tipo}>{capitalizeFirstLetter(tipo)}</option>
                     ))}
                   </select>
                 </div>
@@ -304,9 +299,9 @@ const ClientDashboard = () => {
                         className="px-6 py-4 whitespace-nowrap text-sm text-gray-500"
                         onClick={() => window.location.href = `#/claim/${claim.id}`}
                       >
-                        {claim.tipoReclamo}
+                        {capitalizeFirstLetter(claim.tipoReclamo)}
                         {claim.tipoReclamo === 'reembolso' && claim.tipoSiniestro && 
-                          <span className="ml-1 text-xs">({claim.tipoSiniestro})</span>
+                          <span className="ml-1 text-xs">({capitalizeFirstLetter(claim.tipoSiniestro)})</span>
                         }
                       </td>
                       <td 
@@ -332,7 +327,7 @@ const ClientDashboard = () => {
                                 ? 'Rechazado'
                                 : claim.status === 'sent-to-insurer' 
                                   ? 'Enviado'
-                                  : claim.status}
+                                  : capitalizeFirstLetter(claim.status)}
                         </span>
                       </td>
                       <td 
@@ -349,8 +344,7 @@ const ClientDashboard = () => {
                             onClick={() => handleCreateComplemento(claim)}
                             className="inline-flex items-center px-2.5 py-1.5 border border-fortex-primary text-xs font-medium rounded text-fortex-primary hover:bg-fortex-primary hover:text-white"
                           >
-                            <SafeIcon icon={FiPlus} className="w-3 h-3 mr-1" />
-                            + Reclamo Complemento
+                            Complemento
                           </button>
                         )}
                       </td>
@@ -372,6 +366,7 @@ const ClientDashboard = () => {
         isOpen={showNewClaimModal}
         onClose={() => setShowNewClaimModal(false)}
         onClaimCreated={handleClaimCreated}
+        initialData={newClaimData}
       />
     </div>
   );

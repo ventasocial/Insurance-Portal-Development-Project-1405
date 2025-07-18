@@ -8,7 +8,7 @@ import toast from 'react-hot-toast';
 
 const { FiX, FiSave, FiUser, FiMail, FiPhone, FiClipboard, FiCalendar } = FiIcons;
 
-const NewClaimModal = ({ isOpen, onClose, onClaimCreated }) => {
+const NewClaimModal = ({ isOpen, onClose, onClaimCreated, initialData = null }) => {
   const { user } = useAuth();
   const [loading, setLoading] = useState(false);
   const [saveAseguradoData, setSaveAseguradoData] = useState(true);
@@ -32,6 +32,22 @@ const NewClaimModal = ({ isOpen, onClose, onClaimCreated }) => {
     fechaSiniestro: '',
     numeroReclamo: ''
   });
+
+  // Inicializar el formulario con datos iniciales si existen
+  useEffect(() => {
+    if (initialData) {
+      setFormData({
+        ...formData,
+        ...initialData
+      });
+    }
+  }, [initialData]);
+
+  // Función para capitalizar la primera letra
+  const capitalizeFirstLetter = (string) => {
+    if (!string) return '';
+    return string.charAt(0).toUpperCase() + string.slice(1);
+  };
 
   const handleInputChange = (field, value) => {
     setFormData(prev => ({ ...prev, [field]: value }));
@@ -102,6 +118,13 @@ const NewClaimModal = ({ isOpen, onClose, onClaimCreated }) => {
       onClaimCreated(newClaim);
       onClose();
 
+      // Si es un complemento, redirigir al usuario a la página de documentos
+      if (formData.tipoSiniestro === 'complemento') {
+        setTimeout(() => {
+          window.location.href = `#/documents/${newClaim.id}`;
+        }, 500);
+      }
+
       // Reset form
       setFormData({
         firstName: user?.firstName || '',
@@ -153,7 +176,7 @@ const NewClaimModal = ({ isOpen, onClose, onClaimCreated }) => {
           <div className="flex items-center justify-between p-6 border-b border-gray-200">
             <h2 className="text-xl font-bold text-gray-900 flex items-center">
               <SafeIcon icon={FiClipboard} className="w-5 h-5 mr-2 text-fortex-primary" />
-              Nuevo Reclamo
+              {initialData?.tipoSiniestro === 'complemento' ? 'Nuevo Reclamo Complemento' : 'Nuevo Reclamo'}
             </h2>
             <button
               onClick={onClose}
@@ -310,7 +333,8 @@ const NewClaimModal = ({ isOpen, onClose, onClaimCreated }) => {
                   value={formData.tipoReclamo}
                   onChange={(e) => handleInputChange('tipoReclamo', e.target.value)}
                   required
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-fortex-primary focus:border-transparent"
+                  disabled={initialData?.tipoSiniestro === 'complemento'}
+                  className={`w-full px-3 py-2 border border-gray-300 rounded-lg ${initialData?.tipoSiniestro === 'complemento' ? 'bg-gray-50 text-gray-600' : 'focus:ring-2 focus:ring-fortex-primary focus:border-transparent'}`}
                 >
                   <option value="">Seleccionar...</option>
                   <option value="reembolso">Reembolso</option>
@@ -331,7 +355,8 @@ const NewClaimModal = ({ isOpen, onClose, onClaimCreated }) => {
                     value={formData.tipoSiniestro}
                     onChange={(e) => handleInputChange('tipoSiniestro', e.target.value)}
                     required
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-fortex-primary focus:border-transparent"
+                    disabled={initialData?.tipoSiniestro === 'complemento'}
+                    className={`w-full px-3 py-2 border border-gray-300 rounded-lg ${initialData?.tipoSiniestro === 'complemento' ? 'bg-gray-50 text-gray-600' : 'focus:ring-2 focus:ring-fortex-primary focus:border-transparent'}`}
                   >
                     <option value="">Seleccionar...</option>
                     <option value="inicial">Inicial</option>

@@ -18,6 +18,7 @@ const AdminDashboard = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [viewMode, setViewMode] = useState('kanban'); // 'kanban' or 'table'
   const [showNewClaimModal, setShowNewClaimModal] = useState(false);
+  const [newClaimData, setNewClaimData] = useState(null);
   const [filters, setFilters] = useState([
     { field: 'status', label: 'Estado', value: '', include: true },
     { field: 'nombreAsegurado', label: 'Asegurado', value: '', include: true },
@@ -31,6 +32,12 @@ const AdminDashboard = () => {
     { id: 'verified', title: 'Documentación Aprobada', status: 'verified' },
     { id: 'sent-to-insurer', title: 'Enviado a Aseguradora', status: 'sent-to-insurer' }
   ];
+
+  // Función para capitalizar la primera letra
+  const capitalizeFirstLetter = (string) => {
+    if (!string) return '';
+    return string.charAt(0).toUpperCase() + string.slice(1);
+  };
 
   // Calculate average processing time (in days)
   const calculateAvgProcessingTime = () => {
@@ -125,6 +132,7 @@ const AdminDashboard = () => {
   };
 
   const handleNewClaim = () => {
+    setNewClaimData(null);
     setShowNewClaimModal(true);
   };
 
@@ -150,15 +158,9 @@ const AdminDashboard = () => {
       numeroReclamo: claim.numeroReclamoAseguradora || ''
     };
 
-    claimsService.createClaim(complementoData)
-      .then(newClaim => {
-        toast.success('Reclamo complemento creado exitosamente');
-        fetchClaims();
-      })
-      .catch(error => {
-        toast.error('Error al crear reclamo complemento');
-        console.error('Error creating complemento:', error);
-      });
+    // Establecer los datos para el nuevo reclamo y abrir el modal
+    setNewClaimData(complementoData);
+    setShowNewClaimModal(true);
   };
 
   if (loading) {
@@ -311,7 +313,7 @@ const AdminDashboard = () => {
                             ? 'Enviado a Aseguradora' 
                             : status === 'rejected' 
                               ? 'Rechazado' 
-                              : status}
+                              : capitalizeFirstLetter(status)}
                     </option>
                   ))}
                 </select>
@@ -337,7 +339,7 @@ const AdminDashboard = () => {
                 >
                   <option value="">Todos</option>
                   {tipoReclamoOptions.map(tipo => (
-                    <option key={tipo} value={tipo}>{tipo}</option>
+                    <option key={tipo} value={tipo}>{capitalizeFirstLetter(tipo)}</option>
                   ))}
                 </select>
               </div>
@@ -488,9 +490,9 @@ const AdminDashboard = () => {
                           className="px-6 py-4 whitespace-nowrap text-sm text-gray-500"
                           onClick={() => window.location.href = `#/admin/claim/${claim.id}`}
                         >
-                          {claim.tipoReclamo}
+                          {capitalizeFirstLetter(claim.tipoReclamo)}
                           {claim.tipoReclamo === 'reembolso' && claim.tipoSiniestro && 
-                            <span className="ml-1 text-xs">({claim.tipoSiniestro})</span>
+                            <span className="ml-1 text-xs">({capitalizeFirstLetter(claim.tipoSiniestro)})</span>
                           }
                         </td>
                         <td
@@ -516,7 +518,7 @@ const AdminDashboard = () => {
                                   ? 'Rechazado'
                                   : claim.status === 'sent-to-insurer' 
                                     ? 'Enviado'
-                                    : claim.status}
+                                    : capitalizeFirstLetter(claim.status)}
                           </span>
                         </td>
                         <td
@@ -534,8 +536,7 @@ const AdminDashboard = () => {
                                 onClick={() => handleCreateComplemento(claim)}
                                 className="inline-flex items-center px-2.5 py-1.5 border border-fortex-primary text-xs font-medium rounded text-fortex-primary hover:bg-fortex-primary hover:text-white"
                               >
-                                <SafeIcon icon={FiPlus} className="w-3 h-3 mr-1" />
-                                + Complemento
+                                Complemento
                               </button>
                             )}
                           </div>
@@ -632,6 +633,7 @@ const AdminDashboard = () => {
         isOpen={showNewClaimModal}
         onClose={() => setShowNewClaimModal(false)}
         onClaimCreated={handleClaimCreated}
+        initialData={newClaimData}
       />
     </div>
   );

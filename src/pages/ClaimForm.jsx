@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 import Header from '../components/Header';
 import { useClaims } from '../contexts/ClaimsContext';
 import { claimsService } from '../services/claimsService';
@@ -8,7 +8,7 @@ import * as FiIcons from 'react-icons/fi';
 import SafeIcon from '../common/SafeIcon';
 import toast from 'react-hot-toast';
 
-const { FiSave, FiArrowLeft, FiUpload } = FiIcons;
+const { FiSave, FiArrowLeft, FiUpload, FiArchive } = FiIcons;
 
 const ClaimForm = () => {
   const { claimId } = useParams();
@@ -17,6 +17,7 @@ const ClaimForm = () => {
   const [claim, setClaim] = useState(null);
   const [formData, setFormData] = useState({});
   const [loading, setLoading] = useState(false);
+  const [showArchiveConfirm, setShowArchiveConfirm] = useState(false);
 
   useEffect(() => {
     const currentClaim = claims.find(c => c.id === claimId);
@@ -25,6 +26,12 @@ const ClaimForm = () => {
       setFormData(currentClaim);
     }
   }, [claimId, claims]);
+
+  // Función para capitalizar la primera letra
+  const capitalizeFirstLetter = (string) => {
+    if (!string) return '';
+    return string.charAt(0).toUpperCase() + string.slice(1);
+  };
 
   const handleInputChange = (field, value) => {
     setFormData(prev => ({ ...prev, [field]: value }));
@@ -45,13 +52,13 @@ const ClaimForm = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    
+
     // Validar número de teléfono
     if (!validatePhone(formData.phone)) {
       toast.error('El número de WhatsApp debe tener el formato: +52 81 1234 5678');
       return;
     }
-    
+
     // Validar email
     if (!validateEmail(formData.email)) {
       toast.error('Por favor ingresa un correo electrónico válido');
@@ -63,7 +70,7 @@ const ClaimForm = () => {
       toast.error('Por favor ingresa un correo electrónico válido para el asegurado');
       return;
     }
-    
+
     setLoading(true);
     try {
       await claimsService.updateClaim(claimId, formData);
@@ -73,6 +80,21 @@ const ClaimForm = () => {
       console.error('Update error:', error);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleArchiveClaim = async () => {
+    setLoading(true);
+    try {
+      await claimsService.updateClaimStatus(claimId, 'archived');
+      toast.success('Reclamo archivado correctamente');
+      navigate('/dashboard');
+    } catch (error) {
+      toast.error('Error al archivar el reclamo');
+      console.error('Archive error:', error);
+    } finally {
+      setLoading(false);
+      setShowArchiveConfirm(false);
     }
   };
 
@@ -102,13 +124,22 @@ const ClaimForm = () => {
           transition={{ duration: 0.5 }}
         >
           <div className="mb-8">
-            <button
-              onClick={() => navigate('/dashboard')}
-              className="flex items-center space-x-2 text-fortex-primary hover:text-fortex-secondary mb-4"
-            >
-              <SafeIcon icon={FiArrowLeft} className="w-4 h-4" />
-              <span>Volver al dashboard</span>
-            </button>
+            <div className="flex justify-between items-center mb-4">
+              <button
+                onClick={() => navigate('/dashboard')}
+                className="flex items-center space-x-2 text-fortex-primary hover:text-fortex-secondary"
+              >
+                <SafeIcon icon={FiArrowLeft} className="w-4 h-4" />
+                <span>Volver al dashboard</span>
+              </button>
+              <button
+                onClick={() => setShowArchiveConfirm(true)}
+                className="flex items-center space-x-2 px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg transition-colors"
+              >
+                <SafeIcon icon={FiArchive} className="w-4 h-4" />
+                <span>Archivar</span>
+              </button>
+            </div>
             <h2 className="text-3xl font-bold text-gray-900 mb-2">
               Reclamo-{claimNumber}
             </h2>
@@ -123,6 +154,7 @@ const ClaimForm = () => {
                 Información del Reclamo
               </h3>
             </div>
+
             <form onSubmit={handleSubmit} className="p-6 space-y-6">
               {/* Contact Information */}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -281,7 +313,6 @@ const ClaimForm = () => {
                     <option value="complemento">Complemento</option>
                   </select>
                 </div>
-
                 {/* Número de Reclamo de la Aseguradora (solo para reembolso/inicial) - Solo visible */}
                 {formData.tipoReclamo === 'reembolso' && formData.tipoSiniestro === 'inicial' && (
                   <div>
@@ -297,7 +328,6 @@ const ClaimForm = () => {
                     />
                   </div>
                 )}
-
                 {/* Número de Reclamo (para complemento) */}
                 {formData.tipoReclamo === 'reembolso' && formData.tipoSiniestro === 'complemento' && (
                   <div>
@@ -338,6 +368,45 @@ const ClaimForm = () => {
           </div>
         </motion.div>
       </main>
+
+      {/* Modal de confirmación para archivar */}
+      <AnimatePresence>
+        {showArchiveConfirm && (
+          <motion.div
+            className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+          >
+            <motion.div
+              className="bg-white rounded-lg shadow-xl w-full max-w-md p-6"
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.95 }}
+            >
+              <h3 className="text-lg font-bold text-gray-900 mb-4">Confirmar archivo</h3>
+              <p className="text-gray-600 mb-6">
+                ¿Estás seguro que deseas archivar este reclamo? Esta acción no se puede deshacer.
+              </p>
+              <div className="flex justify-end space-x-4">
+                <button
+                  onClick={() => setShowArchiveConfirm(false)}
+                  className="px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors"
+                >
+                  Cancelar
+                </button>
+                <button
+                  onClick={handleArchiveClaim}
+                  disabled={loading}
+                  className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors disabled:opacity-50"
+                >
+                  {loading ? 'Archivando...' : 'Archivar reclamo'}
+                </button>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 };

@@ -11,6 +11,12 @@ const { FiFileText, FiClock, FiCheckCircle, FiXCircle, FiArrowRight, FiUser } = 
 const ClaimCard = ({ claim, isAdmin = false }) => {
   const navigate = useNavigate();
 
+  // Función para capitalizar la primera letra
+  const capitalizeFirstLetter = (string) => {
+    if (!string) return '';
+    return string.charAt(0).toUpperCase() + string.slice(1);
+  };
+
   const getStatusIcon = (status) => {
     switch (status) {
       case 'pending': return FiClock;
@@ -42,7 +48,7 @@ const ClaimCard = ({ claim, isAdmin = false }) => {
       case 'verified': return 'Aprobado';
       case 'sent-to-insurer': return 'Enviado a Aseguradora';
       case 'finalized': return 'Finalizado';
-      default: return 'Desconocido';
+      default: return capitalizeFirstLetter(status);
     }
   };
 
@@ -79,7 +85,7 @@ const ClaimCard = ({ claim, isAdmin = false }) => {
               R-{claimNumber}
             </h3>
             <p className="text-sm text-gray-600">
-              {claim.tipoReclamo}
+              {capitalizeFirstLetter(claim.tipoReclamo)}
             </p>
           </div>
         </div>
