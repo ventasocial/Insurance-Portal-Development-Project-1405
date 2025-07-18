@@ -9,7 +9,7 @@ import * as FiIcons from 'react-icons/fi';
 import SafeIcon from '../common/SafeIcon';
 import toast from 'react-hot-toast';
 
-const { FiArrowLeft, FiFile, FiCheck, FiX, FiClock, FiDownload, FiArchive } = FiIcons;
+const { FiArrowLeft, FiFile, FiCheck, FiX, FiClock, FiDownload, FiArchive, FiSend } = FiIcons;
 
 const DocumentUpload = () => {
   const { claimId } = useParams();
@@ -19,6 +19,7 @@ const DocumentUpload = () => {
   const [documents, setDocuments] = useState({});
   const [loading, setLoading] = useState(false);
   const [showArchiveConfirm, setShowArchiveConfirm] = useState(false);
+  const [sendingStatus, setSendingStatus] = useState(false);
 
   useEffect(() => {
     const currentClaim = claims.find(c => c.id === claimId);
@@ -58,13 +59,13 @@ const DocumentUpload = () => {
         { key: 'formatoBancario', name: 'Formato Único de Información Bancaria', required: true },
         { key: 'informeMedico', name: 'Informe Médico', required: true },
       ];
-      
+
       documents.informacionPersonal = [
-        { key: 'caratulaEstadoCuenta', name: 'Carátula del Estado de Cuenta', required: true },
         { key: 'identificacionTitular', name: 'Identificación Oficial del Titular de la Cuenta Bancaria', required: true },
         { key: 'identificacionAsegurado', name: 'Identificación Oficial del Asegurado Afectado o Tutor', required: true },
+        { key: 'caratulaEstadoCuenta', name: 'Carátula del Estado de Cuenta', required: true },
       ];
-      
+
       documents.documentosSiniestro = [
         { key: 'facturasReembolso', name: 'Facturas para Reembolso', required: true },
         { key: 'recetasCorrespondientes', name: 'Recetas correspondientes a las facturas', required: true },
@@ -73,29 +74,24 @@ const DocumentUpload = () => {
 
       // Agregar documentos específicos según el tipo de servicio
       const servicios = tipoServicioReembolso ? tipoServicioReembolso.split(',') : [];
-      
       if (servicios.includes('hospitales')) {
         documents.documentosSiniestro.push({ key: 'facturaHospitales', name: 'Factura de Hospitales', required: true });
       }
-      
       if (servicios.includes('honorarios-medicos')) {
         documents.documentosSiniestro.push({ key: 'facturaHonorariosMedicos', name: 'Factura de Honorarios Médicos', required: true });
       }
-      
       if (servicios.includes('estudios-laboratorio')) {
         documents.documentosSiniestro.push(
           { key: 'facturaEstudiosLab', name: 'Factura de Estudios de Laboratorio e Imagenología', required: true },
           { key: 'estudiosLaboratorio', name: 'Estudios de Laboratorio e Imagenología', required: true }
         );
       }
-      
       if (servicios.includes('medicamentos')) {
         documents.documentosSiniestro.push(
           { key: 'facturaMedicamentos', name: 'Factura de Medicamentos', required: true },
           { key: 'recetaMedicamentos', name: 'Receta de Medicamentos', required: true }
         );
       }
-      
       if (servicios.includes('rehabilitacion')) {
         documents.documentosSiniestro.push(
           { key: 'facturaRehabilitacion', name: 'Factura de Rehabilitación', required: true },
@@ -109,28 +105,25 @@ const DocumentUpload = () => {
         { key: 'avisoAccidente', name: 'Aviso de Accidente o Enfermedad', required: true },
         { key: 'informeMedico', name: 'Informe Médico', required: true },
       ];
-      
+
       documents.informacionPersonal = [
         { key: 'identificacionAsegurado', name: 'Identificación Oficial del Asegurado', required: true }
       ];
-      
+
       documents.documentosSiniestro = [
         { key: 'estudiosInforme', name: 'Estudios que sustenten cada informe médico', required: true }
       ];
 
       // Agregar documentos específicos según el tipo de servicio
       const servicios = tipoServicioProgramacion ? tipoServicioProgramacion.split(',') : [];
-      
       if (servicios.includes('cirugia')) {
         if (esCirugiaEspecializada) {
           documents.formasAseguradora.push({ key: 'formatoCirugiaEspecializada', name: 'Formato de Cirugía de Traumatología, Ortopedia y Neurocirugía', required: true });
         }
       }
-      
       if (servicios.includes('medicamentos')) {
         documents.documentosSiniestro.push({ key: 'recetaMedicamentos', name: 'Recetas de Medicamentos', required: true });
       }
-      
       if (servicios.includes('rehabilitacion')) {
         documents.documentosSiniestro.push({ key: 'bitacoraMedico', name: 'Bitácora del Médico (incluyendo número de terapias, sesiones y duración)', required: true });
       }
@@ -140,7 +133,7 @@ const DocumentUpload = () => {
         { key: 'avisoAccidente', name: 'Aviso de Accidente o Enfermedad', required: true },
         { key: 'informeMedico', name: 'Informe Médico', required: true },
       ];
-      
+
       documents.informacionPersonal = [
         { key: 'identificacionAsegurado', name: 'Identificación Oficial del Asegurado', required: true }
       ];
@@ -211,6 +204,33 @@ const DocumentUpload = () => {
     }
   };
 
+  const handleSendStatus = async () => {
+    setSendingStatus(true);
+    try {
+      // Simulate sending status
+      await new Promise(resolve => setTimeout(resolve, 1000));
+      toast.success('Estatus enviado correctamente');
+    } catch (error) {
+      toast.error('Error al enviar el estatus');
+      console.error('Send status error:', error);
+    } finally {
+      setSendingStatus(false);
+    }
+  };
+
+  // Validar si se puede enviar estatus
+  const canSendStatus = () => {
+    const allDocs = Object.values(documents);
+    if (allDocs.length === 0) return false;
+    
+    // Verificar que todos los documentos estén aprobados o rechazados (con comentarios)
+    return allDocs.every(doc => {
+      if (doc.status === 'approved') return true;
+      if (doc.status === 'rejected' && doc.comments && doc.comments.trim() !== '') return true;
+      return false;
+    });
+  };
+
   if (!claim) {
     return (
       <div className="min-h-screen bg-gray-50">
@@ -262,7 +282,11 @@ const DocumentUpload = () => {
           {/* Sección: Formas de la Aseguradora */}
           {requiredDocumentsMap.formasAseguradora.length > 0 && (
             <div className="mb-8">
-              <h3 className="text-xl font-semibold text-gray-800 mb-4">Formas de la Aseguradora</h3>
+              <div className="flex items-center mb-4">
+                <div className="h-px bg-fortex-primary flex-1"></div>
+                <h4 className="text-lg font-semibold text-fortex-primary mx-4">Formas de la Aseguradora</h4>
+                <div className="h-px bg-fortex-primary flex-1"></div>
+              </div>
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                 {requiredDocumentsMap.formasAseguradora.map((docType) => {
                   const status = getDocumentStatus(docType.key);
@@ -270,7 +294,7 @@ const DocumentUpload = () => {
                   return (
                     <motion.div
                       key={docType.key}
-                      className="bg-white rounded-lg shadow-sm p-6"
+                      className="bg-gray-50 rounded-lg shadow-sm p-6 border border-gray-200"
                       initial={{ opacity: 0, y: 20 }}
                       animate={{ opacity: 1, y: 0 }}
                       transition={{ delay: 0.1 }}
@@ -288,7 +312,7 @@ const DocumentUpload = () => {
                       {doc && doc.files && doc.files.length > 0 ? (
                         <div className="space-y-3 mb-4">
                           {doc.files.map((file, index) => (
-                            <div key={index} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                            <div key={index} className="flex items-center justify-between p-3 bg-white rounded-lg border">
                               <div className="flex items-center space-x-3">
                                 <SafeIcon icon={FiFile} className="w-5 h-5 text-fortex-primary" />
                                 <div>
@@ -315,7 +339,7 @@ const DocumentUpload = () => {
                           ))}
                         </div>
                       ) : (
-                        <div className="mb-4 p-3 bg-gray-50 border border-gray-200 rounded-lg">
+                        <div className="mb-4 p-3 bg-white border border-gray-200 rounded-lg">
                           <p className="text-sm text-gray-600">
                             <strong>Estado:</strong> Pendiente de subir documento
                           </p>
@@ -347,7 +371,11 @@ const DocumentUpload = () => {
           {/* Sección: Información Personal */}
           {requiredDocumentsMap.informacionPersonal.length > 0 && (
             <div className="mb-8">
-              <h3 className="text-xl font-semibold text-gray-800 mb-4">Información Personal</h3>
+              <div className="flex items-center mb-4">
+                <div className="h-px bg-fortex-secondary flex-1"></div>
+                <h4 className="text-lg font-semibold text-fortex-secondary mx-4">Información Personal</h4>
+                <div className="h-px bg-fortex-secondary flex-1"></div>
+              </div>
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                 {requiredDocumentsMap.informacionPersonal.map((docType) => {
                   const status = getDocumentStatus(docType.key);
@@ -355,7 +383,7 @@ const DocumentUpload = () => {
                   return (
                     <motion.div
                       key={docType.key}
-                      className="bg-white rounded-lg shadow-sm p-6"
+                      className="bg-blue-50 rounded-lg shadow-sm p-6 border border-blue-200"
                       initial={{ opacity: 0, y: 20 }}
                       animate={{ opacity: 1, y: 0 }}
                       transition={{ delay: 0.1 }}
@@ -373,7 +401,7 @@ const DocumentUpload = () => {
                       {doc && doc.files && doc.files.length > 0 ? (
                         <div className="space-y-3 mb-4">
                           {doc.files.map((file, index) => (
-                            <div key={index} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                            <div key={index} className="flex items-center justify-between p-3 bg-white rounded-lg border">
                               <div className="flex items-center space-x-3">
                                 <SafeIcon icon={FiFile} className="w-5 h-5 text-fortex-primary" />
                                 <div>
@@ -400,7 +428,7 @@ const DocumentUpload = () => {
                           ))}
                         </div>
                       ) : (
-                        <div className="mb-4 p-3 bg-gray-50 border border-gray-200 rounded-lg">
+                        <div className="mb-4 p-3 bg-white border border-gray-200 rounded-lg">
                           <p className="text-sm text-gray-600">
                             <strong>Estado:</strong> Pendiente de subir documento
                           </p>
@@ -432,7 +460,11 @@ const DocumentUpload = () => {
           {/* Sección: Documentos del Siniestro */}
           {requiredDocumentsMap.documentosSiniestro.length > 0 && (
             <div className="mb-8">
-              <h3 className="text-xl font-semibold text-gray-800 mb-4">Documentos del Siniestro</h3>
+              <div className="flex items-center mb-4">
+                <div className="h-px bg-orange-400 flex-1"></div>
+                <h4 className="text-lg font-semibold text-orange-600 mx-4">Documentos del Siniestro</h4>
+                <div className="h-px bg-orange-400 flex-1"></div>
+              </div>
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                 {requiredDocumentsMap.documentosSiniestro.map((docType) => {
                   const status = getDocumentStatus(docType.key);
@@ -440,7 +472,7 @@ const DocumentUpload = () => {
                   return (
                     <motion.div
                       key={docType.key}
-                      className="bg-white rounded-lg shadow-sm p-6"
+                      className="bg-orange-50 rounded-lg shadow-sm p-6 border border-orange-200"
                       initial={{ opacity: 0, y: 20 }}
                       animate={{ opacity: 1, y: 0 }}
                       transition={{ delay: 0.1 }}
@@ -458,7 +490,7 @@ const DocumentUpload = () => {
                       {doc && doc.files && doc.files.length > 0 ? (
                         <div className="space-y-3 mb-4">
                           {doc.files.map((file, index) => (
-                            <div key={index} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                            <div key={index} className="flex items-center justify-between p-3 bg-white rounded-lg border">
                               <div className="flex items-center space-x-3">
                                 <SafeIcon icon={FiFile} className="w-5 h-5 text-fortex-primary" />
                                 <div>
@@ -485,7 +517,7 @@ const DocumentUpload = () => {
                           ))}
                         </div>
                       ) : (
-                        <div className="mb-4 p-3 bg-gray-50 border border-gray-200 rounded-lg">
+                        <div className="mb-4 p-3 bg-white border border-gray-200 rounded-lg">
                           <p className="text-sm text-gray-600">
                             <strong>Estado:</strong> Pendiente de subir documento
                           </p>
@@ -514,14 +546,25 @@ const DocumentUpload = () => {
             </div>
           )}
 
-          {/* Botón Archivar */}
-          <div className="flex justify-end mt-8">
+          {/* Botones inferiores */}
+          <div className="flex justify-between items-center mt-8">
             <button
               onClick={() => setShowArchiveConfirm(true)}
               className="flex items-center space-x-2 px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg transition-colors"
             >
               <SafeIcon icon={FiArchive} className="w-4 h-4" />
               <span>Archivar</span>
+            </button>
+
+            <button
+              onClick={handleSendStatus}
+              disabled={!canSendStatus() || sendingStatus}
+              className="flex items-center space-x-2 px-6 py-3 bg-fortex-primary text-white rounded-lg hover:bg-fortex-secondary transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              <SafeIcon icon={FiSend} className="w-4 h-4" />
+              <span>
+                {sendingStatus ? 'Enviando...' : 'Enviar Estatus al Asegurado'}
+              </span>
             </button>
           </div>
         </motion.div>

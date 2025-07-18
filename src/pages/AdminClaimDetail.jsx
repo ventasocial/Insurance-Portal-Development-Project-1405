@@ -65,9 +65,9 @@ const AdminClaimDetail = () => {
       ];
 
       documents.informacionPersonal = [
-        { key: 'caratulaEstadoCuenta', name: 'Carátula del Estado de Cuenta', required: true },
         { key: 'identificacionTitular', name: 'Identificación Oficial del Titular de la Cuenta Bancaria', required: true },
         { key: 'identificacionAsegurado', name: 'Identificación Oficial del Asegurado Afectado o Tutor', required: true },
+        { key: 'caratulaEstadoCuenta', name: 'Carátula del Estado de Cuenta', required: true },
       ];
 
       documents.documentosSiniestro = [
@@ -187,6 +187,12 @@ const AdminClaimDetail = () => {
     }));
   };
 
+  // Validar si un documento puede ser aprobado/rechazado
+  const canProcessDocument = (docType) => {
+    const doc = documents[docType];
+    return doc && doc.files && doc.files.length > 0;
+  };
+
   const handleDocumentStatus = async (documentType, status) => {
     setProcessingDocId(documentType);
     const comments = documentComments[documentType] || '';
@@ -296,6 +302,19 @@ const AdminClaimDetail = () => {
     document.body.removeChild(link);
   };
 
+  // Validar si se puede enviar estatus
+  const canSendStatus = () => {
+    const allDocs = Object.values(documents);
+    if (allDocs.length === 0) return false;
+    
+    // Verificar que todos los documentos estén aprobados o rechazados (con comentarios)
+    return allDocs.every(doc => {
+      if (doc.status === 'approved') return true;
+      if (doc.status === 'rejected' && doc.comments && doc.comments.trim() !== '') return true;
+      return false;
+    });
+  };
+
   if (!claim) {
     return (
       <div className="min-h-screen bg-gray-50">
@@ -349,24 +368,18 @@ const AdminClaimDetail = () => {
                   <span>Editado: {formatDateTime(claim.updatedAt)} por {claim.lastEditedBy || 'Usuario del sistema'}</span>
                 </div>
               </div>
-              <button
-                onClick={isInInsurer ? handleArchiveClaim : handleSendStatus}
-                disabled={loading || sendingStatus}
-                className={`flex items-center space-x-2 px-6 py-3 rounded-lg font-medium transition-colors disabled:opacity-50 ${
-                  isInInsurer
-                    ? 'bg-red-600 hover:bg-red-700 text-white'
-                    : 'bg-fortex-primary hover:bg-fortex-secondary text-white'
-                }`}
-                style={isInInsurer ? { backgroundColor: '#e33333' } : {}}
-              >
-                <SafeIcon icon={isInInsurer ? FiArchive : FiSend} className="w-4 h-4" />
-                <span>
-                  {loading || sendingStatus
-                    ? (isInInsurer ? 'Archivando...' : 'Enviando...')
-                    : (isInInsurer ? 'Archivar Tarjeta' : 'Enviar Estatus al Asegurado')
-                  }
-                </span>
-              </button>
+              {isInInsurer && (
+                <button
+                  onClick={handleArchiveClaim}
+                  disabled={loading}
+                  className="flex items-center space-x-2 px-6 py-3 rounded-lg font-medium transition-colors disabled:opacity-50 bg-red-600 hover:bg-red-700 text-white"
+                >
+                  <SafeIcon icon={FiArchive} className="w-4 h-4" />
+                  <span>
+                    {loading ? 'Archivando...' : 'Archivar Tarjeta'}
+                  </span>
+                </button>
+              )}
             </div>
           </div>
 
@@ -524,20 +537,10 @@ const AdminClaimDetail = () => {
 
           {/* Documents Section */}
           <div className="mt-8 bg-white rounded-lg shadow-sm">
-            <div className="px-6 py-4 border-b border-gray-200 flex justify-between items-center">
+            <div className="px-6 py-4 border-b border-gray-200">
               <h3 className="text-lg font-semibold text-gray-900">
                 Documentos del Reclamo
               </h3>
-              <button
-                onClick={handleSendStatus}
-                disabled={loading || sendingStatus}
-                className="flex items-center space-x-2 px-6 py-3 bg-fortex-primary text-white rounded-lg hover:bg-fortex-secondary transition-colors disabled:opacity-50"
-              >
-                <SafeIcon icon={FiSend} className="w-4 h-4" />
-                <span>
-                  {sendingStatus ? 'Enviando...' : 'Enviar Estatus al Asegurado'}
-                </span>
-              </button>
             </div>
             <div className="p-6">
               {/* Sección: Formas de la Aseguradora */}
@@ -552,6 +555,7 @@ const AdminClaimDetail = () => {
                     {requiredDocumentsMap.formasAseguradora.map((docType) => {
                       const status = documents[docType.key]?.status || 'pending';
                       const doc = documents[docType.key];
+                      const hasFiles = canProcessDocument(docType.key);
                       return (
                         <div key={docType.key} className="bg-gray-50 rounded-lg p-4 border border-gray-200">
                           <div className="flex items-center justify-between mb-4">
@@ -595,23 +599,27 @@ const AdminClaimDetail = () => {
                           <div className="flex space-x-2 mb-3">
                             <button
                               onClick={() => handleDocumentStatus(docType.key, 'approved')}
-                              disabled={processingDocId === docType.key}
+                              disabled={processingDocId === docType.key || !hasFiles}
                               className={`flex-1 px-3 py-2 rounded text-sm font-medium transition-colors ${
+                                !hasFiles ? 'bg-gray-200 text-gray-400 cursor-not-allowed' :
                                 status === 'approved'
                                   ? 'bg-green-100 text-green-700'
                                   : 'bg-gray-100 text-gray-700 hover:bg-green-100 hover:text-green-700'
                               }`}
+                              title={!hasFiles ? 'Debe subir un documento primero' : ''}
                             >
                               <SafeIcon icon={FiCheckCircle} className="w-4 h-4 mx-auto" />
                             </button>
                             <button
                               onClick={() => handleDocumentStatus(docType.key, 'rejected')}
-                              disabled={processingDocId === docType.key}
+                              disabled={processingDocId === docType.key || !hasFiles}
                               className={`flex-1 px-3 py-2 rounded text-sm font-medium transition-colors ${
+                                !hasFiles ? 'bg-gray-200 text-gray-400 cursor-not-allowed' :
                                 status === 'rejected'
                                   ? 'bg-red-100 text-red-700'
                                   : 'bg-gray-100 text-gray-700 hover:bg-red-100 hover:text-red-700'
                               }`}
+                              title={!hasFiles ? 'Debe subir un documento primero' : ''}
                             >
                               <SafeIcon icon={FiXCircle} className="w-4 h-4 mx-auto" />
                             </button>
@@ -646,6 +654,7 @@ const AdminClaimDetail = () => {
                     {requiredDocumentsMap.informacionPersonal.map((docType) => {
                       const status = documents[docType.key]?.status || 'pending';
                       const doc = documents[docType.key];
+                      const hasFiles = canProcessDocument(docType.key);
                       return (
                         <div key={docType.key} className="bg-blue-50 rounded-lg p-4 border border-blue-200">
                           <div className="flex items-center justify-between mb-4">
@@ -689,23 +698,27 @@ const AdminClaimDetail = () => {
                           <div className="flex space-x-2 mb-3">
                             <button
                               onClick={() => handleDocumentStatus(docType.key, 'approved')}
-                              disabled={processingDocId === docType.key}
+                              disabled={processingDocId === docType.key || !hasFiles}
                               className={`flex-1 px-3 py-2 rounded text-sm font-medium transition-colors ${
+                                !hasFiles ? 'bg-gray-200 text-gray-400 cursor-not-allowed' :
                                 status === 'approved'
                                   ? 'bg-green-100 text-green-700'
                                   : 'bg-gray-100 text-gray-700 hover:bg-green-100 hover:text-green-700'
                               }`}
+                              title={!hasFiles ? 'Debe subir un documento primero' : ''}
                             >
                               <SafeIcon icon={FiCheckCircle} className="w-4 h-4 mx-auto" />
                             </button>
                             <button
                               onClick={() => handleDocumentStatus(docType.key, 'rejected')}
-                              disabled={processingDocId === docType.key}
+                              disabled={processingDocId === docType.key || !hasFiles}
                               className={`flex-1 px-3 py-2 rounded text-sm font-medium transition-colors ${
+                                !hasFiles ? 'bg-gray-200 text-gray-400 cursor-not-allowed' :
                                 status === 'rejected'
                                   ? 'bg-red-100 text-red-700'
                                   : 'bg-gray-100 text-gray-700 hover:bg-red-100 hover:text-red-700'
                               }`}
+                              title={!hasFiles ? 'Debe subir un documento primero' : ''}
                             >
                               <SafeIcon icon={FiXCircle} className="w-4 h-4 mx-auto" />
                             </button>
@@ -740,6 +753,7 @@ const AdminClaimDetail = () => {
                     {requiredDocumentsMap.documentosSiniestro.map((docType) => {
                       const status = documents[docType.key]?.status || 'pending';
                       const doc = documents[docType.key];
+                      const hasFiles = canProcessDocument(docType.key);
                       return (
                         <div key={docType.key} className="bg-orange-50 rounded-lg p-4 border border-orange-200">
                           <div className="flex items-center justify-between mb-4">
@@ -783,23 +797,27 @@ const AdminClaimDetail = () => {
                           <div className="flex space-x-2 mb-3">
                             <button
                               onClick={() => handleDocumentStatus(docType.key, 'approved')}
-                              disabled={processingDocId === docType.key}
+                              disabled={processingDocId === docType.key || !hasFiles}
                               className={`flex-1 px-3 py-2 rounded text-sm font-medium transition-colors ${
+                                !hasFiles ? 'bg-gray-200 text-gray-400 cursor-not-allowed' :
                                 status === 'approved'
                                   ? 'bg-green-100 text-green-700'
                                   : 'bg-gray-100 text-gray-700 hover:bg-green-100 hover:text-green-700'
                               }`}
+                              title={!hasFiles ? 'Debe subir un documento primero' : ''}
                             >
                               <SafeIcon icon={FiCheckCircle} className="w-4 h-4 mx-auto" />
                             </button>
                             <button
                               onClick={() => handleDocumentStatus(docType.key, 'rejected')}
-                              disabled={processingDocId === docType.key}
+                              disabled={processingDocId === docType.key || !hasFiles}
                               className={`flex-1 px-3 py-2 rounded text-sm font-medium transition-colors ${
+                                !hasFiles ? 'bg-gray-200 text-gray-400 cursor-not-allowed' :
                                 status === 'rejected'
                                   ? 'bg-red-100 text-red-700'
                                   : 'bg-gray-100 text-gray-700 hover:bg-red-100 hover:text-red-700'
                               }`}
+                              title={!hasFiles ? 'Debe subir un documento primero' : ''}
                             >
                               <SafeIcon icon={FiXCircle} className="w-4 h-4 mx-auto" />
                             </button>
@@ -822,6 +840,20 @@ const AdminClaimDetail = () => {
                 </div>
               )}
             </div>
+          </div>
+
+          {/* Botón inferior derecho */}
+          <div className="flex justify-end mt-8">
+            <button
+              onClick={handleSendStatus}
+              disabled={!canSendStatus() || sendingStatus}
+              className="flex items-center space-x-2 px-6 py-3 bg-fortex-primary text-white rounded-lg hover:bg-fortex-secondary transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              <SafeIcon icon={FiSend} className="w-4 h-4" />
+              <span>
+                {sendingStatus ? 'Enviando...' : 'Enviar Estatus al Asegurado'}
+              </span>
+            </button>
           </div>
         </motion.div>
       </main>

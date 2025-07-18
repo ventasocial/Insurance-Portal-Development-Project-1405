@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { authService } from '../services/authService';
+import { supabaseService } from '../services/supabaseService';
 import supabase from '../lib/supabase';
 
 const AuthContext = createContext();
@@ -21,6 +22,7 @@ export const AuthProvider = ({ children }) => {
     const initAuth = async () => {
       try {
         console.log('Initializing authentication');
+        
         // Check for existing Supabase session
         const { data } = await supabase.auth.getSession();
         const session = data?.session;
@@ -44,7 +46,7 @@ export const AuthProvider = ({ children }) => {
           const token = localStorage.getItem('fortex_token');
           const adminToken = localStorage.getItem('fortex_admin_token');
           const operatorToken = localStorage.getItem('fortex_operator_token');
-
+          
           if (adminToken) {
             console.log('Found admin token');
             const adminUser = await authService.validateAdminToken(adminToken);
@@ -76,18 +78,45 @@ export const AuthProvider = ({ children }) => {
     };
 
     initAuth();
+
+    // Listen for auth changes
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(
+      async (event, session) => {
+        console.log('Auth state changed:', event);
+        
+        if (event === 'SIGNED_IN' && session) {
+          const userData = {
+            id: session.user.id,
+            contactId: session.user.id,
+            email: session.user.email,
+            firstName: session.user.user_metadata?.firstName || 'Usuario',
+            lastName: session.user.user_metadata?.lastName || '',
+            phone: session.user.user_metadata?.phone || '',
+            roles: session.user.user_metadata?.roles || ['client']
+          };
+          setUser(userData);
+          setRoles(userData.roles);
+        } else if (event === 'SIGNED_OUT') {
+          setUser(null);
+          setRoles([]);
+        }
+      }
+    );
+
+    return () => subscription.unsubscribe();
   }, []);
 
   const login = async (email, password) => {
     try {
       console.log('Attempting login with email:', email);
+      
       // Try Supabase login
       try {
         const { data, error } = await supabase.auth.signInWithPassword({
           email,
           password
         });
-
+        
         if (!error && data?.user) {
           console.log('Supabase login successful:', data.user.email);
           const userData = {
@@ -106,7 +135,7 @@ export const AuthProvider = ({ children }) => {
       } catch (e) {
         console.error('Supabase login failed, falling back to demo login:', e);
       }
-
+      
       // Fallback to demo login for specific credentials
       if (email === 'admin@fortex.com' && password === 'admin123') {
         console.log('Using admin demo login');
@@ -119,6 +148,17 @@ export const AuthProvider = ({ children }) => {
       }
     } catch (error) {
       console.error('Login error:', error);
+      throw error;
+    }
+  };
+
+  const signUp = async (email, password, userData) => {
+    try {
+      const result = await supabaseService.signUp(email, password, userData);
+      console.log('User signed up successfully');
+      return result;
+    } catch (error) {
+      console.error('Sign up error:', error);
       throw error;
     }
   };
@@ -206,9 +246,19 @@ export const AuthProvider = ({ children }) => {
     return requiredRoles.some(role => roles.includes(role));
   };
 
-  const updateUserProfile = (profileData) => {
-    setUser(prev => ({ ...prev, ...profileData }));
-    console.log('User profile updated:', profileData);
+  const updateUserProfile = async (profileData) => {
+    try {
+      if (user?.id && user.id.startsWith('demo-') === false) {
+        // Update in Supabase
+        await supabaseService.updateUserProfile(profileData);
+      }
+      
+      setUser(prev => ({ ...prev, ...profileData }));
+      console.log('User profile updated:', profileData);
+    } catch (error) {
+      console.error('Error updating user profile:', error);
+      throw error;
+    }
   };
 
   const logout = async () => {
@@ -218,6 +268,7 @@ export const AuthProvider = ({ children }) => {
     } catch (error) {
       console.error('Supabase signout error:', error);
     }
+    
     setUser(null);
     setRoles([]);
     localStorage.removeItem('fortex_token');
@@ -234,6 +285,7 @@ export const AuthProvider = ({ children }) => {
     hasRole,
     hasAnyRole,
     login,
+    signUp,
     loginDemo,
     adminLogin,
     operatorLogin,

@@ -6,9 +6,9 @@ import SafeIcon from '../common/SafeIcon';
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
 
-const { FiFileText, FiClock, FiCheckCircle, FiXCircle, FiArrowRight, FiUser } = FiIcons;
+const { FiFileText, FiClock, FiCheckCircle, FiXCircle, FiArrowRight, FiUser, FiPlus } = FiIcons;
 
-const ClaimCard = ({ claim, isAdmin = false }) => {
+const ClaimCard = ({ claim, isAdmin = false, onCreateComplemento }) => {
   const navigate = useNavigate();
 
   // Función para capitalizar la primera letra
@@ -62,6 +62,13 @@ const ClaimCard = ({ claim, isAdmin = false }) => {
     }
   };
 
+  const handleCreateComplemento = (e) => {
+    e.stopPropagation();
+    if (onCreateComplemento) {
+      onCreateComplemento(claim);
+    }
+  };
+
   // Extract just the number part from claim ID and convert to uppercase
   const claimNumber = claim.id?.replace('claim-', '').toUpperCase();
 
@@ -71,12 +78,28 @@ const ClaimCard = ({ claim, isAdmin = false }) => {
     return format(date, "d 'de' MMMM, yyyy h:mm a", { locale: es });
   };
 
+  // Check if complemento button should be shown
+  const showComplementoButton = claim.tipoReclamo === 'reembolso' && 
+                                 claim.tipoSiniestro === 'inicial' && 
+                                 claim.numeroReclamoAseguradora;
+
   return (
     <motion.div
-      className="bg-white rounded-lg shadow-md p-6 cursor-pointer hover:shadow-lg transition-shadow"
+      className="bg-white rounded-lg shadow-md p-6 cursor-pointer hover:shadow-lg transition-shadow relative"
       whileHover={{ y: -2 }}
       onClick={handleCardClick}
     >
+      {/* Complemento Button */}
+      {showComplementoButton && (
+        <button
+          onClick={handleCreateComplemento}
+          className="absolute top-2 right-2 bg-fortex-primary text-white rounded-full p-1 hover:bg-fortex-secondary transition-colors z-10"
+          title="Crear reclamo complemento"
+        >
+          <SafeIcon icon={FiPlus} className="w-4 h-4" />
+        </button>
+      )}
+
       <div className="flex items-start justify-between mb-4">
         <div className="flex items-center space-x-3">
           <SafeIcon icon={FiFileText} className="w-8 h-8 text-fortex-primary" />
@@ -100,22 +123,18 @@ const ClaimCard = ({ claim, isAdmin = false }) => {
           <span className="text-gray-600">Asegurado:</span>
           <span className="font-medium">{claim.nombreAsegurado}</span>
         </div>
-
         <div className="flex justify-between text-sm">
           <span className="text-gray-600">Póliza:</span>
           <span className="font-medium">{claim.numeroPoliza}</span>
         </div>
-
         <div className="flex justify-between text-sm">
           <span className="text-gray-600">Aseguradora:</span>
           <span className="font-medium">{claim.aseguradora || 'No especificada'}</span>
         </div>
-
         <div className="flex justify-between text-sm">
           <span className="text-gray-600">Número de Reclamo:</span>
           <span className="font-medium">{claim.numeroReclamoAseguradora || claim.numeroReclamo || 'No asignado'}</span>
         </div>
-
         <div className="flex justify-between text-sm">
           <span className="text-gray-600">Fecha de Creación:</span>
           <span className="font-medium">{new Date(claim.createdAt).toLocaleDateString()}</span>
