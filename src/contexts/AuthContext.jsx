@@ -22,11 +22,10 @@ export const AuthProvider = ({ children }) => {
     const initAuth = async () => {
       try {
         console.log('Initializing authentication');
-        
         // Check for existing Supabase session
         const { data } = await supabase.auth.getSession();
         const session = data?.session;
-        
+
         if (session) {
           console.log('Found Supabase session:', session.user.email);
           const userData = {
@@ -108,7 +107,7 @@ export const AuthProvider = ({ children }) => {
   const login = async (email, password) => {
     try {
       console.log('Attempting login with email:', email);
-      
+
       // Try Supabase login
       try {
         const { data, error } = await supabase.auth.signInWithPassword({
@@ -142,6 +141,9 @@ export const AuthProvider = ({ children }) => {
       } else if (email === 'operator@fortex.com' && password === 'operator123') {
         console.log('Using operator demo login');
         return operatorLogin({ email, password });
+      } else if (email === 'demo@cliente.com' && password === 'demo123') {
+        console.log('Using client demo login');
+        return loginDemo();
       } else {
         throw new Error('Invalid credentials');
       }
@@ -165,9 +167,8 @@ export const AuthProvider = ({ children }) => {
           }
         }
       });
-      
+
       if (error) throw error;
-      
       console.log('User signed up successfully');
       return data;
     } catch (error) {

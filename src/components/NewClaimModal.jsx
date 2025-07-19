@@ -14,9 +14,10 @@ const NewClaimModal = ({ isOpen, onClose, onClaimCreated, initialData = null }) 
   const [saveAseguradoData, setSaveAseguradoData] = useState(true);
   const [savedAsegurados, setSavedAsegurados] = useState([]);
   const [selectedAsegurado, setSelectedAsegurado] = useState(null);
-  const [currentStep, setCurrentStep] = useState(1); // 1 = form, 2 = documents
+  const [currentStep, setCurrentStep] = useState(1); // 1=form, 2=documents
   const [servicioOptions, setServicioOptions] = useState({ reembolso: [], programacion: [] });
   const [createdClaimId, setCreatedClaimId] = useState(null); // Store the created claim ID
+
   const [formData, setFormData] = useState({
     firstName: user?.firstName || '',
     lastName: user?.lastName || '',
@@ -51,8 +52,10 @@ const NewClaimModal = ({ isOpen, onClose, onClaimCreated, initialData = null }) 
     const loadSavedAsegurados = async () => {
       try {
         // Cargar desde Supabase los asegurados del usuario actual
-        const asegurados = await claimsService.getSavedAsegurados(user?.id);
-        setSavedAsegurados(asegurados);
+        if (user?.id) {
+          const asegurados = await claimsService.getSavedAsegurados(user.id);
+          setSavedAsegurados(asegurados);
+        }
       } catch (error) {
         console.error('Error cargando asegurados:', error);
       }
@@ -86,25 +89,16 @@ const NewClaimModal = ({ isOpen, onClose, onClaimCreated, initialData = null }) 
   };
 
   const handleInputChange = (field, value) => {
-    setFormData(prev => ({
-      ...prev,
-      [field]: value
-    }));
+    setFormData(prev => ({ ...prev, [field]: value }));
   };
 
   const handleServiceToggle = (serviceId) => {
     setFormData(prev => {
       const currentServices = prev.servicios || [];
       if (currentServices.includes(serviceId)) {
-        return {
-          ...prev,
-          servicios: currentServices.filter(id => id !== serviceId)
-        };
+        return { ...prev, servicios: currentServices.filter(id => id !== serviceId) };
       } else {
-        return {
-          ...prev,
-          servicios: [...currentServices, serviceId]
-        };
+        return { ...prev, servicios: [...currentServices, serviceId] };
       }
     });
   };
@@ -116,7 +110,7 @@ const NewClaimModal = ({ isOpen, onClose, onClaimCreated, initialData = null }) 
         nombreAsegurado: asegurado.nombre,
         emailAsegurado: asegurado.email,
         numeroPoliza: asegurado.poliza,
-        digitoVerificador: asegurado.digitoVerificador,
+        digitoVerificador: asegurado.digito_verificador,
         aseguradora: asegurado.aseguradora
       }));
       setSelectedAsegurado(asegurado);
@@ -156,7 +150,7 @@ const NewClaimModal = ({ isOpen, onClose, onClaimCreated, initialData = null }) 
   const handleSaveAsegurado = async () => {
     try {
       const newAsegurado = {
-        user_id: user.id,
+        user_id: user?.id || 'demo-user',
         nombre: formData.nombreAsegurado,
         email: formData.emailAsegurado,
         poliza: formData.numeroPoliza,
@@ -166,7 +160,6 @@ const NewClaimModal = ({ isOpen, onClose, onClaimCreated, initialData = null }) 
 
       // Guardar en Supabase y obtener el ID generado
       const savedAsegurado = await claimsService.saveAsegurado(newAsegurado);
-      
       if (savedAsegurado) {
         setSavedAsegurados(prev => [...prev, savedAsegurado]);
       }
@@ -179,23 +172,49 @@ const NewClaimModal = ({ isOpen, onClose, onClaimCreated, initialData = null }) 
 
   const nextStep = async (e) => {
     e.preventDefault();
-    
+
+    // Validaciones básicas
+    if (!formData.nombreAsegurado) {
+      toast.error('Por favor ingresa el nombre del asegurado');
+      return;
+    }
+
+    if (!formData.numeroPoliza) {
+      toast.error('Por favor ingresa el número de póliza');
+      return;
+    }
+
+    if (!formData.aseguradora) {
+      toast.error('Por favor selecciona la aseguradora');
+      return;
+    }
+
+    if (!formData.relacionAsegurado) {
+      toast.error('Por favor selecciona la relación con el asegurado');
+      return;
+    }
+
+    if (!formData.tipoReclamo) {
+      toast.error('Por favor selecciona el tipo de reclamo');
+      return;
+    }
+
     // Validaciones para el primer paso
     if (!validatePhone(formData.phone)) {
       toast.error('El número de WhatsApp debe tener el formato: +52 81 1234 5678');
       return;
     }
-    
+
     if (!validateEmail(formData.email)) {
       toast.error('Por favor ingresa un correo electrónico válido');
       return;
     }
-    
+
     if (formData.emailAsegurado && !validateEmail(formData.emailAsegurado)) {
       toast.error('Por favor ingresa un correo electrónico válido para el asegurado');
       return;
     }
-    
+
     if (formData.tipoReclamo && formData.servicios.length === 0) {
       toast.error('Por favor selecciona al menos un tipo de servicio');
       return;
@@ -207,26 +226,29 @@ const NewClaimModal = ({ isOpen, onClose, onClaimCreated, initialData = null }) 
       // Convertir los servicios seleccionados a formato adecuado para el backend
       const submissionData = {
         ...formData,
-        contactId: user?.id,
+        contactId: user?.id || 'demo-user',
+        servicios: formData.servicios || [],
         tipoServicioReembolso: formData.tipoReclamo === 'reembolso' ? formData.servicios.join(',') : '',
         tipoServicioProgramacion: formData.tipoReclamo === 'programacion' ? formData.servicios.join(',') : '',
       };
 
       const newClaim = await claimsService.createClaim(submissionData);
       setCreatedClaimId(newClaim.id); // Store the claim ID
-      
+
       // Guardar información del asegurado para futuros reclamos si está activado el checkbox
       if (saveAseguradoData && formData.nombreAsegurado) {
         await handleSaveAsegurado();
       }
-      
+
       toast.success('¡Reclamo creado exitosamente!');
-      onClaimCreated(newClaim);
-      
+      if (onClaimCreated) {
+        onClaimCreated(newClaim);
+      }
+
       // Avanzar al paso de documentos
       setCurrentStep(2);
     } catch (error) {
-      toast.error('Error al crear el reclamo');
+      toast.error('Error al crear el reclamo: ' + (error.message || 'Inténtalo de nuevo'));
       console.error('Create claim error:', error);
     } finally {
       setLoading(false);
@@ -236,7 +258,7 @@ const NewClaimModal = ({ isOpen, onClose, onClaimCreated, initialData = null }) 
   const handleSubmit = async (e) => {
     e.preventDefault();
     onClose();
-    
+
     // Si es un complemento, redirigir al usuario a la página de documentos
     if (formData.tipoSiniestro === 'complemento' && createdClaimId) {
       setTimeout(() => {
@@ -300,8 +322,9 @@ const NewClaimModal = ({ isOpen, onClose, onClaimCreated, initialData = null }) 
       // Agregar documentos específicos según el tipo de servicio
       const servicios = formData.servicios || [];
       if (servicios.includes('hospitales')) {
-        documents.documentosSiniestro.push({key: 'facturaHospitales', name: 'Factura de Hospitales', required: true});
+        documents.documentosSiniestro.push({ key: 'facturaHospitales', name: 'Factura de Hospitales', required: true });
       }
+
       // Otros servicios...
     } else if (formData.tipoReclamo === 'programacion') {
       // Documentos base para programación
@@ -311,7 +334,7 @@ const NewClaimModal = ({ isOpen, onClose, onClaimCreated, initialData = null }) 
       ];
       // Otros documentos para programación...
     }
-    
+
     return documents;
   };
 
@@ -357,9 +380,7 @@ const NewClaimModal = ({ isOpen, onClose, onClaimCreated, initialData = null }) 
                     {savedAsegurados.map((asegurado) => (
                       <div
                         key={asegurado.id}
-                        className={`flex justify-between items-center p-3 rounded-md cursor-pointer border ${
-                          selectedAsegurado?.id === asegurado.id ? 'bg-blue-50 border-blue-300' : 'border-gray-300'
-                        }`}
+                        className={`flex justify-between items-center p-3 rounded-md cursor-pointer border ${selectedAsegurado?.id === asegurado.id ? 'bg-blue-50 border-blue-300' : 'border-gray-300'}`}
                         onClick={() => handleAseguradoSelect(asegurado)}
                       >
                         <div className="flex-1">
@@ -531,11 +552,7 @@ const NewClaimModal = ({ isOpen, onClose, onClaimCreated, initialData = null }) 
                     }}
                     required
                     disabled={initialData?.tipoSiniestro === 'complemento'}
-                    className={`w-full px-3 py-2 border border-gray-300 rounded-lg ${
-                      initialData?.tipoSiniestro === 'complemento'
-                        ? 'bg-gray-50 text-gray-600'
-                        : 'focus:ring-2 focus:ring-fortex-primary focus:border-transparent'
-                    }`}
+                    className={`w-full px-3 py-2 border border-gray-300 rounded-lg ${initialData?.tipoSiniestro === 'complemento' ? 'bg-gray-50 text-gray-600' : 'focus:ring-2 focus:ring-fortex-primary focus:border-transparent'}`}
                   >
                     <option value="">Seleccionar...</option>
                     <option value="reembolso">Reembolso</option>
@@ -558,11 +575,7 @@ const NewClaimModal = ({ isOpen, onClose, onClaimCreated, initialData = null }) 
                         onChange={(e) => handleInputChange('tipoSiniestro', e.target.value)}
                         required
                         disabled={initialData?.tipoSiniestro === 'complemento'}
-                        className={`w-full px-3 py-2 border border-gray-300 rounded-lg ${
-                          initialData?.tipoSiniestro === 'complemento'
-                            ? 'bg-gray-50 text-gray-600'
-                            : 'focus:ring-2 focus:ring-fortex-primary focus:border-transparent'
-                        }`}
+                        className={`w-full px-3 py-2 border border-gray-300 rounded-lg ${initialData?.tipoSiniestro === 'complemento' ? 'bg-gray-50 text-gray-600' : 'focus:ring-2 focus:ring-fortex-primary focus:border-transparent'}`}
                       >
                         <option value="">Seleccionar...</option>
                         <option value="inicial">Inicial</option>
@@ -721,7 +734,7 @@ const NewClaimModal = ({ isOpen, onClose, onClaimCreated, initialData = null }) 
               <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
                 <h3 className="font-medium text-blue-800 mb-2">Documentos requeridos para tu reclamo</h3>
                 <p className="text-sm text-blue-700">
-                  Para continuar con el proceso, necesitarás subir los siguientes documentos. 
+                  Para continuar con el proceso, necesitarás subir los siguientes documentos.
                   Puedes hacerlo ahora o más tarde desde la página de detalles del reclamo.
                 </p>
               </div>
@@ -730,7 +743,6 @@ const NewClaimModal = ({ isOpen, onClose, onClaimCreated, initialData = null }) 
               <div className="space-y-6">
                 {Object.entries(getRequiredDocuments()).map(([category, docs]) => {
                   if (docs.length === 0) return null;
-                  
                   return (
                     <div key={category} className="border border-gray-200 rounded-lg p-4">
                       <h4 className="font-medium text-gray-900 mb-3">

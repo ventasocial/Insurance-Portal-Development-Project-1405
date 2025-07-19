@@ -14,16 +14,22 @@ const Login = () => {
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
   const { login, loginDemo, signUp, user } = useAuth();
+  
   const [showCredentialLogin, setShowCredentialLogin] = useState(true);
   const [showSignUp, setShowSignUp] = useState(false);
-  const [credentials, setCredentials] = useState({ email: '', password: '' });
-  const [signUpData, setSignUpData] = useState({ 
-    firstName: '', 
-    lastName: '', 
-    email: '', 
-    password: '', 
+  
+  const [credentials, setCredentials] = useState({
+    email: '',
+    password: ''
+  });
+  
+  const [signUpData, setSignUpData] = useState({
+    firstName: '',
+    lastName: '',
+    email: '',
+    password: '',
     confirmPassword: '',
-    phone: '' 
+    phone: ''
   });
 
   useEffect(() => {
@@ -31,6 +37,7 @@ const Login = () => {
       navigate('/dashboard');
       return;
     }
+
     const token = searchParams.get('token');
     if (token) {
       handleMagicLinkLogin(token);
@@ -83,13 +90,13 @@ const Login = () => {
 
   const handleSignUp = async (e) => {
     e.preventDefault();
-    
+
     // Validaciones
     if (signUpData.password !== signUpData.confirmPassword) {
       toast.error('Las contraseñas no coinciden');
       return;
     }
-    
+
     if (signUpData.password.length < 6) {
       toast.error('La contraseña debe tener al menos 6 caracteres');
       return;
@@ -97,15 +104,23 @@ const Login = () => {
 
     setLoading(true);
     try {
-      await signUp(signUpData.email, signUpData.password, {
-        firstName: signUpData.firstName,
-        lastName: signUpData.lastName,
-        phone: signUpData.phone
-      });
+      await signUp(
+        signUpData.email,
+        signUpData.password,
+        {
+          firstName: signUpData.firstName,
+          lastName: signUpData.lastName,
+          phone: signUpData.phone
+        }
+      );
+      
       toast.success('Cuenta creada exitosamente. Ahora puedes iniciar sesión.');
       setShowSignUp(false);
       setShowCredentialLogin(true);
-      setCredentials({ email: signUpData.email, password: '' });
+      setCredentials({
+        email: signUpData.email,
+        password: ''
+      });
     } catch (error) {
       toast.error('Error al crear la cuenta: ' + (error.message || 'Datos inválidos'));
       console.error('Sign up error:', error);
@@ -151,7 +166,7 @@ const Login = () => {
                   type="text"
                   required
                   value={signUpData.firstName}
-                  onChange={(e) => setSignUpData({...signUpData, firstName: e.target.value})}
+                  onChange={(e) => setSignUpData({ ...signUpData, firstName: e.target.value })}
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-fortex-primary focus:border-transparent"
                   placeholder="Nombre"
                 />
@@ -164,12 +179,13 @@ const Login = () => {
                   type="text"
                   required
                   value={signUpData.lastName}
-                  onChange={(e) => setSignUpData({...signUpData, lastName: e.target.value})}
+                  onChange={(e) => setSignUpData({ ...signUpData, lastName: e.target.value })}
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-fortex-primary focus:border-transparent"
                   placeholder="Apellidos"
                 />
               </div>
             </div>
+
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
                 Correo Electrónico
@@ -180,12 +196,13 @@ const Login = () => {
                   type="email"
                   required
                   value={signUpData.email}
-                  onChange={(e) => setSignUpData({...signUpData, email: e.target.value})}
+                  onChange={(e) => setSignUpData({ ...signUpData, email: e.target.value })}
                   className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-fortex-primary focus:border-transparent"
                   placeholder="tu@email.com"
                 />
               </div>
             </div>
+
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
                 Teléfono
@@ -193,11 +210,12 @@ const Login = () => {
               <input
                 type="tel"
                 value={signUpData.phone}
-                onChange={(e) => setSignUpData({...signUpData, phone: e.target.value})}
+                onChange={(e) => setSignUpData({ ...signUpData, phone: e.target.value })}
                 className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-fortex-primary focus:border-transparent"
                 placeholder="+52 81 1234 5678"
               />
             </div>
+
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
                 Contraseña
@@ -208,12 +226,13 @@ const Login = () => {
                   type="password"
                   required
                   value={signUpData.password}
-                  onChange={(e) => setSignUpData({...signUpData, password: e.target.value})}
+                  onChange={(e) => setSignUpData({ ...signUpData, password: e.target.value })}
                   className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-fortex-primary focus:border-transparent"
                   placeholder="••••••••"
                 />
               </div>
             </div>
+
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
                 Confirmar Contraseña
@@ -224,12 +243,13 @@ const Login = () => {
                   type="password"
                   required
                   value={signUpData.confirmPassword}
-                  onChange={(e) => setSignUpData({...signUpData, confirmPassword: e.target.value})}
+                  onChange={(e) => setSignUpData({ ...signUpData, confirmPassword: e.target.value })}
                   className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-fortex-primary focus:border-transparent"
                   placeholder="••••••••"
                 />
               </div>
             </div>
+
             <button
               type="submit"
               disabled={loading}
@@ -237,10 +257,14 @@ const Login = () => {
             >
               {loading ? 'Creando cuenta...' : 'Crear cuenta'}
             </button>
+
             <div className="text-center mt-4">
               <button
                 type="button"
-                onClick={() => {setShowSignUp(false); setShowCredentialLogin(true);}}
+                onClick={() => {
+                  setShowSignUp(false);
+                  setShowCredentialLogin(true);
+                }}
                 className="text-fortex-primary hover:text-fortex-secondary text-sm font-medium transition-colors"
               >
                 ¿Ya tienes cuenta? Inicia sesión
@@ -259,12 +283,13 @@ const Login = () => {
                   type="email"
                   required
                   value={credentials.email}
-                  onChange={(e) => setCredentials({...credentials, email: e.target.value})}
+                  onChange={(e) => setCredentials({ ...credentials, email: e.target.value })}
                   className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-fortex-primary focus:border-transparent"
                   placeholder="tu@email.com"
                 />
               </div>
             </div>
+
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
                 Contraseña
@@ -275,12 +300,13 @@ const Login = () => {
                   type="password"
                   required
                   value={credentials.password}
-                  onChange={(e) => setCredentials({...credentials, password: e.target.value})}
+                  onChange={(e) => setCredentials({ ...credentials, password: e.target.value })}
                   className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-fortex-primary focus:border-transparent"
                   placeholder="••••••••"
                 />
               </div>
             </div>
+
             <button
               type="submit"
               disabled={loading}
@@ -288,6 +314,7 @@ const Login = () => {
             >
               {loading ? 'Iniciando sesión...' : 'Iniciar Sesión'}
             </button>
+
             <div className="text-center mt-4 flex justify-between">
               <button
                 type="button"
@@ -296,9 +323,13 @@ const Login = () => {
               >
                 Ver otras opciones
               </button>
+
               <button
                 type="button"
-                onClick={() => {setShowCredentialLogin(false); setShowSignUp(true);}}
+                onClick={() => {
+                  setShowCredentialLogin(false);
+                  setShowSignUp(true);
+                }}
                 className="flex items-center space-x-1 text-fortex-primary hover:text-fortex-secondary text-sm font-medium transition-colors"
               >
                 <SafeIcon icon={FiUserPlus} className="w-4 h-4" />
@@ -310,11 +341,11 @@ const Login = () => {
           <div className="text-center space-y-4">
             <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
               <p className="text-sm text-blue-800">
-                Para acceder al portal, utiliza el enlace enviado a tu correo electrónico, 
+                Para acceder al portal, utiliza el enlace enviado a tu correo electrónico,
                 accede con tus credenciales o prueba el acceso demo.
               </p>
             </div>
-            
+
             {/* Botón Credenciales */}
             <motion.button
               onClick={() => setShowCredentialLogin(true)}
@@ -324,7 +355,7 @@ const Login = () => {
             >
               Acceder con Email y Contraseña
             </motion.button>
-            
+
             {/* Botón Crear cuenta */}
             <motion.button
               onClick={() => setShowSignUp(true)}
@@ -334,7 +365,7 @@ const Login = () => {
             >
               Crear cuenta nueva
             </motion.button>
-            
+
             <div className="text-center">
               <div className="relative">
                 <div className="absolute inset-0 flex items-center">
@@ -345,7 +376,7 @@ const Login = () => {
                 </div>
               </div>
             </div>
-            
+
             {/* Botón Demo */}
             <motion.button
               onClick={handleDemoLogin}
@@ -355,7 +386,7 @@ const Login = () => {
             >
               🚀 Acceder como Demo Cliente
             </motion.button>
-            
+
             <div className="text-center mt-6">
               <p className="text-sm text-gray-600 mb-2">
                 ¿No tienes un enlace de acceso?
@@ -363,6 +394,7 @@ const Login = () => {
               <p className="text-xs text-gray-500">
                 Contacta con nuestro equipo de soporte para obtener acceso
               </p>
+
               <button
                 onClick={() => navigate('/admin')}
                 className="text-fortex-primary hover:text-fortex-secondary text-sm font-medium transition-colors mt-4"
