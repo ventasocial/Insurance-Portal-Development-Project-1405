@@ -25,7 +25,10 @@ const ClientDashboard = () => {
   });
 
   const handleFilterChange = (field, value) => {
-    setFilters(prev => ({ ...prev, [field]: value }));
+    setFilters(prev => ({
+      ...prev,
+      [field]: value
+    }));
   };
 
   const handleNewClaim = () => {
@@ -73,7 +76,7 @@ const ClientDashboard = () => {
   // Filtrar reclamos
   const filteredClaims = claims.filter(claim => {
     // Filtro de búsqueda por texto
-    const matchesSearch = searchTerm === '' ||
+    const matchesSearch = searchTerm === '' || 
       claim.nombreAsegurado?.toLowerCase().includes(searchTerm.toLowerCase()) ||
       claim.email?.toLowerCase().includes(searchTerm.toLowerCase()) ||
       claim.numeroPoliza?.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -153,10 +156,10 @@ const ClientDashboard = () => {
                     {statusOptions.map(status => (
                       <option key={status} value={status}>
                         {status === 'pending' ? 'Pendiente' :
-                         status === 'verified' ? 'Aprobado' :
-                         status === 'rejected' ? 'Rechazado' :
-                         status === 'sent-to-insurer' ? 'Enviado a Aseguradora' :
-                         capitalizeFirstLetter(status)}
+                          status === 'verified' ? 'Aprobado' :
+                            status === 'rejected' ? 'Rechazado' :
+                              status === 'sent-to-insurer' ? 'Enviado a Aseguradora' :
+                                capitalizeFirstLetter(status)}
                       </option>
                     ))}
                   </select>
@@ -257,70 +260,47 @@ const ClientDashboard = () => {
                 <tbody className="bg-white divide-y divide-gray-200">
                   {filteredClaims.map((claim) => (
                     <tr key={claim.id} className="hover:bg-gray-50 cursor-pointer">
-                      <td
-                        className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900"
-                        onClick={() => window.location.href = `#/claim/${claim.id}`}
-                      >
+                      <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900" onClick={() => window.location.href = `#/claim/${claim.id}`}>
                         R-{claim.id.replace('claim-', '').toUpperCase()}
                       </td>
-                      <td
-                        className="px-6 py-4 whitespace-nowrap text-sm text-gray-500"
-                        onClick={() => window.location.href = `#/claim/${claim.id}`}
-                      >
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500" onClick={() => window.location.href = `#/claim/${claim.id}`}>
                         {claim.nombreAsegurado}
                       </td>
-                      <td
-                        className="px-6 py-4 whitespace-nowrap text-sm text-gray-500"
-                        onClick={() => window.location.href = `#/claim/${claim.id}`}
-                      >
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500" onClick={() => window.location.href = `#/claim/${claim.id}`}>
                         {claim.numeroPoliza}
                       </td>
-                      <td
-                        className="px-6 py-4 whitespace-nowrap text-sm text-gray-500"
-                        onClick={() => window.location.href = `#/claim/${claim.id}`}
-                      >
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500" onClick={() => window.location.href = `#/claim/${claim.id}`}>
                         {claim.numeroReclamoAseguradora || claim.numeroReclamo || '-'}
                       </td>
-                      <td
-                        className="px-6 py-4 whitespace-nowrap text-sm text-gray-500"
-                        onClick={() => window.location.href = `#/claim/${claim.id}`}
-                      >
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500" onClick={() => window.location.href = `#/claim/${claim.id}`}>
                         {claim.aseguradora}
                       </td>
-                      <td
-                        className="px-6 py-4 whitespace-nowrap text-sm text-gray-500"
-                        onClick={() => window.location.href = `#/claim/${claim.id}`}
-                      >
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500" onClick={() => window.location.href = `#/claim/${claim.id}`}>
                         {capitalizeFirstLetter(claim.tipoReclamo)}
                         {claim.tipoReclamo === 'reembolso' && claim.tipoSiniestro && (
                           <span className="ml-1 text-xs">({capitalizeFirstLetter(claim.tipoSiniestro)})</span>
                         )}
                       </td>
-                      <td
-                        className="px-6 py-4 whitespace-nowrap"
-                        onClick={() => window.location.href = `#/claim/${claim.id}`}
-                      >
+                      <td className="px-6 py-4 whitespace-nowrap" onClick={() => window.location.href = `#/claim/${claim.id}`}>
                         <span className={`px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full ${
                           claim.status === 'pending' ? 'bg-yellow-100 text-yellow-800' :
-                          claim.status === 'verified' ? 'bg-green-100 text-green-800' :
-                          claim.status === 'rejected' ? 'bg-red-100 text-red-800' :
-                          claim.status === 'sent-to-insurer' ? 'bg-blue-100 text-blue-800' :
-                          'bg-gray-100 text-gray-800'
+                            claim.status === 'verified' ? 'bg-green-100 text-green-800' :
+                              claim.status === 'rejected' ? 'bg-red-100 text-red-800' :
+                                claim.status === 'sent-to-insurer' ? 'bg-blue-100 text-blue-800' :
+                                  'bg-gray-100 text-gray-800'
                         }`}>
                           {claim.status === 'pending' ? 'Pendiente' :
-                           claim.status === 'verified' ? 'Aprobado' :
-                           claim.status === 'rejected' ? 'Rechazado' :
-                           claim.status === 'sent-to-insurer' ? 'Enviado' :
-                           capitalizeFirstLetter(claim.status)}
+                            claim.status === 'verified' ? 'Aprobado' :
+                              claim.status === 'rejected' ? 'Rechazado' :
+                                claim.status === 'sent-to-insurer' ? 'Enviado' :
+                                  capitalizeFirstLetter(claim.status)}
                         </span>
                       </td>
-                      <td
-                        className="px-6 py-4 whitespace-nowrap text-sm text-gray-500"
-                        onClick={() => window.location.href = `#/claim/${claim.id}`}
-                      >
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500" onClick={() => window.location.href = `#/claim/${claim.id}`}>
                         {new Date(claim.createdAt).toLocaleDateString()}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
+                        {/* Botón para crear complemento si es reembolso inicial y tiene número asignado */}
                         {claim.tipoReclamo === 'reembolso' && 
                          claim.tipoSiniestro === 'inicial' && 
                          claim.numeroReclamoAseguradora && (

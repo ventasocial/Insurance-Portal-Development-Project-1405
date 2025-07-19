@@ -44,9 +44,8 @@ const AdminDashboard = () => {
     const archivedClaims = claims.filter(claim => 
       claim.status === 'archived' && claim.createdAt && claim.updatedAt
     );
-    
     if (archivedClaims.length === 0) return 'N/A';
-    
+
     const totalDays = archivedClaims.reduce((sum, claim) => {
       const createdDate = new Date(claim.createdAt);
       const updatedDate = new Date(claim.updatedAt);
@@ -54,7 +53,7 @@ const AdminDashboard = () => {
       const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
       return sum + diffDays;
     }, 0);
-    
+
     return (totalDays / archivedClaims.length).toFixed(1);
   };
 
@@ -63,7 +62,7 @@ const AdminDashboard = () => {
       claim.status === status && 
       claim.status !== 'archived' && // Don't show archived claims
       (
-        searchTerm === '' ||
+        searchTerm === '' || 
         claim.nombreAsegurado?.toLowerCase().includes(searchTerm.toLowerCase()) ||
         claim.email?.toLowerCase().includes(searchTerm.toLowerCase()) ||
         claim.numeroPoliza?.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -84,7 +83,7 @@ const AdminDashboard = () => {
     return claimsList.filter(claim => {
       return filters.every(filter => {
         if (!filter.value) return true;
-        
+
         if (filter.field === 'date') {
           const claimDate = new Date(claim.createdAt);
           const filterDate = new Date(filter.value);
@@ -94,24 +93,23 @@ const AdminDashboard = () => {
             return claimDate <= filterDate;
           }
         }
-        
+
         if (filter.field === 'status') {
           return filter.include ? claim.status === filter.value : claim.status !== filter.value;
         }
-        
+
         if (filter.field === 'tipoReclamo') {
           return filter.include ? claim.tipoReclamo === filter.value : claim.tipoReclamo !== filter.value;
         }
-        
+
         if (filter.field === 'aseguradora') {
           return filter.include ? claim.aseguradora === filter.value : claim.aseguradora !== filter.value;
         }
-        
+
         let fieldValue = claim[filter.field];
         if (typeof fieldValue === 'string') {
           fieldValue = fieldValue.toLowerCase();
         }
-        
         const filterValue = filter.value.toLowerCase();
         const matches = fieldValue && fieldValue.includes(filterValue);
         return filter.include ? matches : !matches;
@@ -121,12 +119,13 @@ const AdminDashboard = () => {
 
   const onDragEnd = async (result) => {
     const { destination, source, draggableId } = result;
-    
+
     if (!destination) return;
+
     if (destination.droppableId === source.droppableId && destination.index === source.index) return;
-    
+
     const newStatus = destination.droppableId;
-    
+
     try {
       await updateClaimStatus(draggableId, newStatus);
       toast.success('Estado del reclamo actualizado');
@@ -252,8 +251,8 @@ const AdminDashboard = () => {
                 <button
                   onClick={() => setViewMode('kanban')}
                   className={`px-3 py-2 rounded-lg flex items-center ${
-                    viewMode === 'kanban'
-                      ? 'bg-fortex-primary text-white'
+                    viewMode === 'kanban' 
+                      ? 'bg-fortex-primary text-white' 
                       : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
                   }`}
                 >
@@ -263,8 +262,8 @@ const AdminDashboard = () => {
                 <button
                   onClick={() => setViewMode('table')}
                   className={`px-3 py-2 rounded-lg flex items-center ${
-                    viewMode === 'table'
-                      ? 'bg-fortex-primary text-white'
+                    viewMode === 'table' 
+                      ? 'bg-fortex-primary text-white' 
                       : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
                   }`}
                 >
@@ -311,10 +310,10 @@ const AdminDashboard = () => {
                   {statusOptions.map(status => (
                     <option key={status} value={status}>
                       {status === 'pending' ? 'Pendiente' :
-                       status === 'verified' ? 'Aprobado' :
-                       status === 'sent-to-insurer' ? 'Enviado a Aseguradora' :
-                       status === 'rejected' ? 'Rechazado' :
-                       capitalizeFirstLetter(status)}
+                        status === 'verified' ? 'Aprobado' :
+                          status === 'sent-to-insurer' ? 'Enviado a Aseguradora' :
+                            status === 'rejected' ? 'Rechazado' :
+                              capitalizeFirstLetter(status)}
                     </option>
                   ))}
                 </select>
@@ -458,67 +457,43 @@ const AdminDashboard = () => {
                   <tbody className="bg-white divide-y divide-gray-200">
                     {tableFilteredClaims.map((claim) => (
                       <tr key={claim.id} className="hover:bg-gray-50 cursor-pointer">
-                        <td
-                          className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900"
-                          onClick={() => window.location.href = `#/admin/claim/${claim.id}`}
-                        >
+                        <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900" onClick={() => window.location.href = `#/admin/claim/${claim.id}`}>
                           R-{claim.id.replace('claim-', '').toUpperCase()}
                         </td>
-                        <td
-                          className="px-6 py-4 whitespace-nowrap text-sm text-gray-500"
-                          onClick={() => window.location.href = `#/admin/claim/${claim.id}`}
-                        >
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500" onClick={() => window.location.href = `#/admin/claim/${claim.id}`}>
                           {claim.nombreAsegurado}
                         </td>
-                        <td
-                          className="px-6 py-4 whitespace-nowrap text-sm text-gray-500"
-                          onClick={() => window.location.href = `#/admin/claim/${claim.id}`}
-                        >
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500" onClick={() => window.location.href = `#/admin/claim/${claim.id}`}>
                           {claim.numeroPoliza}
                         </td>
-                        <td
-                          className="px-6 py-4 whitespace-nowrap text-sm text-gray-500"
-                          onClick={() => window.location.href = `#/admin/claim/${claim.id}`}
-                        >
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500" onClick={() => window.location.href = `#/admin/claim/${claim.id}`}>
                           {claim.numeroReclamoAseguradora || claim.numeroReclamo || '-'}
                         </td>
-                        <td
-                          className="px-6 py-4 whitespace-nowrap text-sm text-gray-500"
-                          onClick={() => window.location.href = `#/admin/claim/${claim.id}`}
-                        >
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500" onClick={() => window.location.href = `#/admin/claim/${claim.id}`}>
                           {claim.aseguradora}
                         </td>
-                        <td
-                          className="px-6 py-4 whitespace-nowrap text-sm text-gray-500"
-                          onClick={() => window.location.href = `#/admin/claim/${claim.id}`}
-                        >
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500" onClick={() => window.location.href = `#/admin/claim/${claim.id}`}>
                           {capitalizeFirstLetter(claim.tipoReclamo)}
                           {claim.tipoReclamo === 'reembolso' && claim.tipoSiniestro && (
                             <span className="ml-1 text-xs">({capitalizeFirstLetter(claim.tipoSiniestro)})</span>
                           )}
                         </td>
-                        <td
-                          className="px-6 py-4 whitespace-nowrap"
-                          onClick={() => window.location.href = `#/admin/claim/${claim.id}`}
-                        >
+                        <td className="px-6 py-4 whitespace-nowrap" onClick={() => window.location.href = `#/admin/claim/${claim.id}`}>
                           <span className={`px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full ${
                             claim.status === 'pending' ? 'bg-yellow-100 text-yellow-800' :
-                            claim.status === 'verified' ? 'bg-green-100 text-green-800' :
-                            claim.status === 'rejected' ? 'bg-red-100 text-red-800' :
-                            claim.status === 'sent-to-insurer' ? 'bg-blue-100 text-blue-800' :
-                            'bg-gray-100 text-gray-800'
+                              claim.status === 'verified' ? 'bg-green-100 text-green-800' :
+                                claim.status === 'rejected' ? 'bg-red-100 text-red-800' :
+                                  claim.status === 'sent-to-insurer' ? 'bg-blue-100 text-blue-800' :
+                                    'bg-gray-100 text-gray-800'
                           }`}>
                             {claim.status === 'pending' ? 'Pendiente' :
-                             claim.status === 'verified' ? 'Aprobado' :
-                             claim.status === 'rejected' ? 'Rechazado' :
-                             claim.status === 'sent-to-insurer' ? 'Enviado' :
-                             capitalizeFirstLetter(claim.status)}
+                              claim.status === 'verified' ? 'Aprobado' :
+                                claim.status === 'rejected' ? 'Rechazado' :
+                                  claim.status === 'sent-to-insurer' ? 'Enviado' :
+                                    capitalizeFirstLetter(claim.status)}
                           </span>
                         </td>
-                        <td
-                          className="px-6 py-4 whitespace-nowrap text-sm text-gray-500"
-                          onClick={() => window.location.href = `#/admin/claim/${claim.id}`}
-                        >
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500" onClick={() => window.location.href = `#/admin/claim/${claim.id}`}>
                           {new Date(claim.createdAt).toLocaleDateString()}
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap text-right">
@@ -568,9 +543,7 @@ const AdminDashboard = () => {
                             ref={provided.innerRef}
                             {...provided.droppableProps}
                             className={`min-h-96 space-y-3 ${
-                              snapshot.isDraggingOver
-                                ? 'bg-blue-50 border-2 border-blue-300 border-dashed'
-                                : ''
+                              snapshot.isDraggingOver ? 'bg-blue-50 border-2 border-blue-300 border-dashed' : ''
                             }`}
                           >
                             {kanbanFilteredClaims
@@ -582,26 +555,14 @@ const AdminDashboard = () => {
                                       ref={provided.innerRef}
                                       {...provided.draggableProps}
                                       {...provided.dragHandleProps}
-                                      className={`${
-                                        snapshot.isDragging ? 'transform rotate-5 shadow-lg' : ''
-                                      }`}
+                                      className={`${snapshot.isDragging ? 'transform rotate-5 shadow-lg' : ''}`}
                                     >
                                       <div className="relative">
-                                        <ClaimCard claim={claim} isAdmin={true} />
-                                        {claim.tipoReclamo === 'reembolso' && 
-                                         claim.tipoSiniestro === 'inicial' && 
-                                         claim.numeroReclamoAseguradora && (
-                                          <button
-                                            onClick={(e) => {
-                                              e.stopPropagation();
-                                              handleCreateComplemento(claim);
-                                            }}
-                                            className="absolute top-2 right-2 bg-fortex-primary text-white rounded-full p-1 hover:bg-fortex-secondary transition-colors"
-                                            title="Crear reclamo complemento"
-                                          >
-                                            <SafeIcon icon={FiPlus} className="w-4 h-4" />
-                                          </button>
-                                        )}
+                                        <ClaimCard
+                                          claim={claim}
+                                          isAdmin={true}
+                                          onCreateComplemento={handleCreateComplemento}
+                                        />
                                       </div>
                                     </div>
                                   )}

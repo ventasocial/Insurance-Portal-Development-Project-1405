@@ -7,8 +7,10 @@ import { claimsService } from '../services/claimsService';
 import * as FiIcons from 'react-icons/fi';
 import SafeIcon from '../common/SafeIcon';
 import toast from 'react-hot-toast';
+import { format } from 'date-fns';
+import { es } from 'date-fns/locale';
 
-const { FiSave, FiArrowLeft, FiUpload, FiArchive } = FiIcons;
+const { FiSave, FiArrowLeft, FiUpload, FiArchive, FiUser, FiMail, FiPhone, FiFileText, FiCalendar } = FiIcons;
 
 const ClaimForm = () => {
   const { claimId } = useParams();
@@ -34,7 +36,10 @@ const ClaimForm = () => {
   };
 
   const handleInputChange = (field, value) => {
-    setFormData(prev => ({ ...prev, [field]: value }));
+    setFormData(prev => ({
+      ...prev,
+      [field]: value
+    }));
   };
 
   // Validación de teléfono
@@ -48,6 +53,12 @@ const ClaimForm = () => {
   const validateEmail = (email) => {
     const regex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     return regex.test(email);
+  };
+
+  const formatDateTime = (dateString) => {
+    if (!dateString) return '';
+    const date = new Date(dateString);
+    return format(date, "d 'de' MMMM, yyyy HH:mm", { locale: es });
   };
 
   const handleSubmit = async (e) => {
@@ -117,7 +128,7 @@ const ClaimForm = () => {
   return (
     <div className="min-h-screen bg-gray-50">
       <Header />
-      <main className="w-full max-w-4xl mx-auto px-[5%] py-8">
+      <main className="w-full mx-auto px-[5%] py-8">
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
@@ -148,54 +159,64 @@ const ClaimForm = () => {
             </p>
           </div>
 
-          <div className="bg-white rounded-lg shadow-sm">
-            <div className="px-6 py-4 border-b border-gray-200">
-              <h3 className="text-lg font-semibold text-gray-900">
-                Información del Reclamo
-              </h3>
-            </div>
-
-            <form onSubmit={handleSubmit} className="p-6 space-y-6">
-              {/* Contact Information */}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Nombre del Contacto
-                  </label>
-                  <input
-                    type="text"
-                    value={`${claim.firstName || ''} ${claim.lastName || ''}`}
-                    disabled
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg bg-gray-50 text-gray-600"
-                  />
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
+            {/* Claim Information */}
+            <div className="bg-white rounded-lg shadow-sm">
+              <div className="px-6 py-4 border-b border-gray-200">
+                <h3 className="text-lg font-semibold text-gray-900 flex items-center">
+                  <SafeIcon icon={FiFileText} className="w-5 h-5 mr-2 text-fortex-primary" />
+                  Información del Reclamo
+                </h3>
+              </div>
+              <form onSubmit={handleSubmit} className="p-6 space-y-4">
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Tipo de Siniestro
+                    </label>
+                    <p className="text-sm text-gray-900 bg-gray-50 px-3 py-2 rounded">
+                      {claim.tipoSiniestro || 'No especificado'}
+                    </p>
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Tipo de Reclamo
+                    </label>
+                    <p className="text-sm text-gray-900 bg-gray-50 px-3 py-2 rounded">
+                      {claim.tipoReclamo || 'No especificado'}
+                    </p>
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Aseguradora
+                    </label>
+                    <select
+                      value={formData.aseguradora || claim.aseguradora || ''}
+                      onChange={(e) => handleInputChange('aseguradora', e.target.value)}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-fortex-primary focus:border-transparent"
+                      required
+                    >
+                      <option value="">Seleccionar...</option>
+                      <option value="GNP">GNP</option>
+                      <option value="AXA">AXA</option>
+                      <option value="Qualitas">Qualitas</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Número de Póliza
+                    </label>
+                    <input
+                      type="text"
+                      value={formData.numeroPoliza || claim.numeroPoliza || ''}
+                      onChange={(e) => handleInputChange('numeroPoliza', e.target.value)}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-fortex-primary focus:border-transparent"
+                      required
+                    />
+                  </div>
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Email
-                  </label>
-                  <input
-                    type="email"
-                    value={claim.email || ''}
-                    disabled
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg bg-gray-50 text-gray-600"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    WhatsApp
-                  </label>
-                  <input
-                    type="tel"
-                    value={formData.phone || claim.phone || ''}
-                    onChange={(e) => handleInputChange('phone', e.target.value)}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-fortex-primary focus:border-transparent"
-                  />
-                  <small className="text-xs text-gray-500 mt-1 block">
-                    Ingresa tu número con código de país
-                  </small>
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
                     Relación con el Asegurado
                   </label>
                   <select
@@ -211,112 +232,11 @@ const ClaimForm = () => {
                     <option value="otro">Otro</option>
                   </select>
                 </div>
-              </div>
 
-              {/* Insured Information */}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Nombre Completo del Asegurado
-                  </label>
-                  <input
-                    type="text"
-                    value={formData.nombreAsegurado || claim.nombreAsegurado || ''}
-                    onChange={(e) => handleInputChange('nombreAsegurado', e.target.value)}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-fortex-primary focus:border-transparent"
-                    required
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Email del Asegurado
-                  </label>
-                  <input
-                    type="email"
-                    value={formData.emailAsegurado || claim.emailAsegurado || ''}
-                    onChange={(e) => handleInputChange('emailAsegurado', e.target.value)}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-fortex-primary focus:border-transparent"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Número de Póliza
-                  </label>
-                  <input
-                    type="text"
-                    value={formData.numeroPoliza || claim.numeroPoliza || ''}
-                    onChange={(e) => handleInputChange('numeroPoliza', e.target.value)}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-fortex-primary focus:border-transparent"
-                    required
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Dígito Verificador
-                  </label>
-                  <input
-                    type="text"
-                    value={formData.digitoVerificador || claim.digitoVerificador || ''}
-                    onChange={(e) => handleInputChange('digitoVerificador', e.target.value)}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-fortex-primary focus:border-transparent"
-                  />
-                </div>
-              </div>
-
-              {/* Claim Information */}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Aseguradora
-                  </label>
-                  <select
-                    value={formData.aseguradora || claim.aseguradora || ''}
-                    onChange={(e) => handleInputChange('aseguradora', e.target.value)}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-fortex-primary focus:border-transparent"
-                    required
-                  >
-                    <option value="">Seleccionar...</option>
-                    <option value="GNP">GNP</option>
-                    <option value="AXA">AXA</option>
-                    <option value="Qualitas">Qualitas</option>
-                  </select>
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Tipo de Reclamo
-                  </label>
-                  <select
-                    value={formData.tipoReclamo || claim.tipoReclamo || ''}
-                    onChange={(e) => handleInputChange('tipoReclamo', e.target.value)}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-fortex-primary focus:border-transparent"
-                    required
-                  >
-                    <option value="">Seleccionar...</option>
-                    <option value="reembolso">Reembolso</option>
-                    <option value="programacion">Programación</option>
-                    <option value="maternidad">Maternidad</option>
-                  </select>
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Tipo de Siniestro
-                  </label>
-                  <select
-                    value={formData.tipoSiniestro || claim.tipoSiniestro || ''}
-                    onChange={(e) => handleInputChange('tipoSiniestro', e.target.value)}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-fortex-primary focus:border-transparent"
-                    required={formData.tipoReclamo === 'reembolso'}
-                    disabled={formData.tipoReclamo !== 'reembolso'}
-                  >
-                    <option value="">Seleccionar...</option>
-                    <option value="inicial">Inicial</option>
-                    <option value="complemento">Complemento</option>
-                  </select>
-                </div>
                 {/* Número de Reclamo de la Aseguradora (solo para reembolso/inicial) - Solo visible */}
                 {formData.tipoReclamo === 'reembolso' && formData.tipoSiniestro === 'inicial' && (
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
                       Número de Reclamo de la Aseguradora
                     </label>
                     <input
@@ -328,10 +248,11 @@ const ClaimForm = () => {
                     />
                   </div>
                 )}
+
                 {/* Número de Reclamo (para complemento) */}
                 {formData.tipoReclamo === 'reembolso' && formData.tipoSiniestro === 'complemento' && (
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
                       Número de Reclamo
                     </label>
                     <input
@@ -344,27 +265,123 @@ const ClaimForm = () => {
                     />
                   </div>
                 )}
-              </div>
 
-              <div className="flex items-center justify-between pt-6 border-t border-gray-200">
-                <button
-                  type="button"
-                  onClick={() => navigate(`/documents/${claimId}`)}
-                  className="flex items-center space-x-2 px-6 py-3 border border-fortex-primary text-fortex-primary rounded-lg hover:bg-fortex-primary hover:text-white transition-colors"
-                >
-                  <SafeIcon icon={FiUpload} className="w-4 h-4" />
-                  <span>Subir Documentos</span>
-                </button>
-                <button
-                  type="submit"
-                  disabled={loading}
-                  className="flex items-center space-x-2 px-6 py-3 bg-fortex-primary text-white rounded-lg hover:bg-fortex-secondary transition-colors disabled:opacity-50"
-                >
-                  <SafeIcon icon={FiSave} className="w-4 h-4" />
-                  <span>{loading ? 'Guardando...' : 'Guardar Cambios'}</span>
-                </button>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1 flex items-center">
+                    <SafeIcon icon={FiCalendar} className="w-4 h-4 mr-1" />
+                    Fecha de Creación
+                  </label>
+                  <p className="text-sm text-gray-900 bg-gray-50 px-3 py-2 rounded">
+                    {formatDateTime(claim.createdAt)}
+                  </p>
+                </div>
+              </form>
+            </div>
+
+            {/* Contact Information */}
+            <div className="bg-white rounded-lg shadow-sm">
+              <div className="px-6 py-4 border-b border-gray-200">
+                <h3 className="text-lg font-semibold text-gray-900 flex items-center">
+                  <SafeIcon icon={FiUser} className="w-5 h-5 mr-2 text-fortex-primary" />
+                  Información de Contacto
+                </h3>
               </div>
-            </form>
+              <form onSubmit={handleSubmit} className="p-6 space-y-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Nombre del Contacto
+                  </label>
+                  <input
+                    type="text"
+                    value={`${claim.firstName || ''} ${claim.lastName || ''}`}
+                    disabled
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg bg-gray-50 text-gray-600"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1 flex items-center">
+                    <SafeIcon icon={FiMail} className="w-4 h-4 mr-1" />
+                    Email
+                  </label>
+                  <input
+                    type="email"
+                    value={claim.email || ''}
+                    disabled
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg bg-gray-50 text-gray-600"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1 flex items-center">
+                    <SafeIcon icon={FiPhone} className="w-4 h-4 mr-1" />
+                    WhatsApp
+                  </label>
+                  <input
+                    type="tel"
+                    value={formData.phone || claim.phone || ''}
+                    onChange={(e) => handleInputChange('phone', e.target.value)}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-fortex-primary focus:border-transparent"
+                  />
+                  <small className="text-xs text-gray-500 mt-1 block">
+                    Ingresa tu número con código de país
+                  </small>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Nombre del Asegurado
+                  </label>
+                  <input
+                    type="text"
+                    value={formData.nombreAsegurado || claim.nombreAsegurado || ''}
+                    onChange={(e) => handleInputChange('nombreAsegurado', e.target.value)}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-fortex-primary focus:border-transparent"
+                    required
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Email del Asegurado
+                  </label>
+                  <input
+                    type="email"
+                    value={formData.emailAsegurado || claim.emailAsegurado || ''}
+                    onChange={(e) => handleInputChange('emailAsegurado', e.target.value)}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-fortex-primary focus:border-transparent"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Dígito Verificador
+                  </label>
+                  <input
+                    type="text"
+                    value={formData.digitoVerificador || claim.digitoVerificador || ''}
+                    onChange={(e) => handleInputChange('digitoVerificador', e.target.value)}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-fortex-primary focus:border-transparent"
+                  />
+                </div>
+              </form>
+            </div>
+          </div>
+
+          {/* Actions */}
+          <div className="flex items-center justify-between pt-6">
+            <button
+              type="button"
+              onClick={() => navigate(`/documents/${claimId}`)}
+              className="flex items-center space-x-2 px-6 py-3 border border-fortex-primary text-fortex-primary rounded-lg hover:bg-fortex-primary hover:text-white transition-colors"
+            >
+              <SafeIcon icon={FiUpload} className="w-4 h-4" />
+              <span>Subir Documentos</span>
+            </button>
+            <button
+              type="submit"
+              onClick={handleSubmit}
+              disabled={loading}
+              className="flex items-center space-x-2 px-6 py-3 bg-fortex-primary text-white rounded-lg hover:bg-fortex-secondary transition-colors disabled:opacity-50"
+            >
+              <SafeIcon icon={FiSave} className="w-4 h-4" />
+              <span>{loading ? 'Guardando...' : 'Guardar Cambios'}</span>
+            </button>
           </div>
         </motion.div>
       </main>
