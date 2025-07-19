@@ -289,6 +289,23 @@ const ClaimForm = () => {
     }
   };
 
+  // Formatea el tipo de reclamo y siniestro para el título
+  const formatClaimTypeTitle = () => {
+    if (!claim) return '';
+    
+    const tipoReclamo = capitalizeFirstLetter(claim.tipoReclamo || '');
+    const tipoSiniestro = capitalizeFirstLetter(claim.tipoSiniestro || '');
+    const nombreAsegurado = claim.nombreAsegurado || '';
+    
+    if (tipoReclamo && tipoSiniestro && nombreAsegurado) {
+      return `${tipoReclamo} ${tipoSiniestro} para ${nombreAsegurado}`;
+    } else if (tipoReclamo && nombreAsegurado) {
+      return `${tipoReclamo} para ${nombreAsegurado}`;
+    }
+    
+    return '';
+  };
+
   if (!claim) {
     return (
       <div className="min-h-screen bg-gray-50">
@@ -343,7 +360,10 @@ const ClaimForm = () => {
             <h2 className="text-3xl font-bold text-gray-900 mb-2">
               Reclamo-{claimNumber}
             </h2>
-            <p className="text-gray-600">
+            <p className="text-gray-600 mb-2">
+              {formatClaimTypeTitle()}
+            </p>
+            <p className="text-gray-500 text-sm">
               Gestiona tu información y documentos
             </p>
           </div>
@@ -385,7 +405,7 @@ const ClaimForm = () => {
                         Tipo de Siniestro
                       </label>
                       <p className="text-sm text-gray-900 bg-gray-50 px-3 py-2 rounded">
-                        {claim.tipoSiniestro || 'No especificado'}
+                        {capitalizeFirstLetter(claim.tipoSiniestro) || 'No especificado'}
                       </p>
                     </div>
                     <div>
@@ -393,7 +413,7 @@ const ClaimForm = () => {
                         Tipo de Reclamo
                       </label>
                       <p className="text-sm text-gray-900 bg-gray-50 px-3 py-2 rounded">
-                        {claim.tipoReclamo || 'No especificado'}
+                        {capitalizeFirstLetter(claim.tipoReclamo) || 'No especificado'}
                       </p>
                     </div>
                     <div>
