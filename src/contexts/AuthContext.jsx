@@ -46,7 +46,7 @@ export const AuthProvider = ({ children }) => {
           const token = localStorage.getItem('fortex_token');
           const adminToken = localStorage.getItem('fortex_admin_token');
           const operatorToken = localStorage.getItem('fortex_operator_token');
-          
+
           if (adminToken) {
             console.log('Found admin token');
             const adminUser = await authService.validateAdminToken(adminToken);
@@ -83,7 +83,6 @@ export const AuthProvider = ({ children }) => {
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (event, session) => {
         console.log('Auth state changed:', event);
-        
         if (event === 'SIGNED_IN' && session) {
           const userData = {
             id: session.user.id,
@@ -116,7 +115,7 @@ export const AuthProvider = ({ children }) => {
           email,
           password
         });
-        
+
         if (!error && data?.user) {
           console.log('Supabase login successful:', data.user.email);
           const userData = {
@@ -135,7 +134,7 @@ export const AuthProvider = ({ children }) => {
       } catch (e) {
         console.error('Supabase login failed, falling back to demo login:', e);
       }
-      
+
       // Fallback to demo login for specific credentials
       if (email === 'admin@fortex.com' && password === 'admin123') {
         console.log('Using admin demo login');
@@ -154,9 +153,23 @@ export const AuthProvider = ({ children }) => {
 
   const signUp = async (email, password, userData) => {
     try {
-      const result = await supabaseService.signUp(email, password, userData);
+      const { data, error } = await supabase.auth.signUp({
+        email,
+        password,
+        options: {
+          data: {
+            firstName: userData.firstName,
+            lastName: userData.lastName,
+            phone: userData.phone,
+            roles: ['client']
+          }
+        }
+      });
+      
+      if (error) throw error;
+      
       console.log('User signed up successfully');
-      return result;
+      return data;
     } catch (error) {
       console.error('Sign up error:', error);
       throw error;
@@ -184,7 +197,7 @@ export const AuthProvider = ({ children }) => {
     try {
       const { email, password } = credentials;
       console.log('Attempting admin login with email:', email);
-      
+
       if (email === 'admin@fortex.com' && password === 'admin123') {
         const adminData = {
           user: {
@@ -213,7 +226,7 @@ export const AuthProvider = ({ children }) => {
     try {
       const { email, password } = credentials;
       console.log('Attempting operator login with email:', email);
-      
+
       if (email === 'operator@fortex.com' && password === 'operator123') {
         const operatorData = {
           user: {
@@ -252,7 +265,6 @@ export const AuthProvider = ({ children }) => {
         // Update in Supabase
         await supabaseService.updateUserProfile(profileData);
       }
-      
       setUser(prev => ({ ...prev, ...profileData }));
       console.log('User profile updated:', profileData);
     } catch (error) {
@@ -268,7 +280,6 @@ export const AuthProvider = ({ children }) => {
     } catch (error) {
       console.error('Supabase signout error:', error);
     }
-    
     setUser(null);
     setRoles([]);
     localStorage.removeItem('fortex_token');

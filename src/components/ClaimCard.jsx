@@ -93,10 +93,11 @@ const ClaimCard = ({ claim, isAdmin = false, onCreateComplemento }) => {
       {showComplementoButton && (
         <button
           onClick={(e) => handleCreateComplemento(e)}
-          className="absolute top-2 right-2 bg-fortex-primary text-white rounded-full p-2 hover:bg-fortex-secondary transition-colors z-10"
+          className="absolute top-3 right-3 bg-fortex-primary text-white rounded-md px-3 py-1.5 hover:bg-fortex-secondary transition-colors z-10 flex items-center space-x-1"
           title="Crear reclamo complemento"
         >
           <SafeIcon icon={FiPlus} className="w-4 h-4" />
+          <span className="text-xs font-medium">Complemento</span>
         </button>
       )}
 

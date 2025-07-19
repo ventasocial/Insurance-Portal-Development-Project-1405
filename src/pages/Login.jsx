@@ -7,17 +7,23 @@ import LoadingSpinner from '../components/LoadingSpinner';
 import * as FiIcons from 'react-icons/fi';
 import SafeIcon from '../common/SafeIcon';
 
-const { FiMail, FiLock } = FiIcons;
+const { FiMail, FiLock, FiUserPlus } = FiIcons;
 
 const Login = () => {
   const [loading, setLoading] = useState(false);
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
-  const { login, loginDemo, user } = useAuth();
+  const { login, loginDemo, signUp, user } = useAuth();
   const [showCredentialLogin, setShowCredentialLogin] = useState(true);
-  const [credentials, setCredentials] = useState({
-    email: '',
-    password: ''
+  const [showSignUp, setShowSignUp] = useState(false);
+  const [credentials, setCredentials] = useState({ email: '', password: '' });
+  const [signUpData, setSignUpData] = useState({ 
+    firstName: '', 
+    lastName: '', 
+    email: '', 
+    password: '', 
+    confirmPassword: '',
+    phone: '' 
   });
 
   useEffect(() => {
@@ -25,7 +31,6 @@ const Login = () => {
       navigate('/dashboard');
       return;
     }
-    
     const token = searchParams.get('token');
     if (token) {
       handleMagicLinkLogin(token);
@@ -60,7 +65,6 @@ const Login = () => {
   const handleCredentialLogin = async (e) => {
     e.preventDefault();
     setLoading(true);
-    
     try {
       if (credentials.email && credentials.password) {
         await login(credentials.email, credentials.password);
@@ -72,6 +76,39 @@ const Login = () => {
     } catch (error) {
       toast.error('Error al iniciar sesión: ' + (error.message || 'Credenciales inválidas'));
       console.error('Login error:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleSignUp = async (e) => {
+    e.preventDefault();
+    
+    // Validaciones
+    if (signUpData.password !== signUpData.confirmPassword) {
+      toast.error('Las contraseñas no coinciden');
+      return;
+    }
+    
+    if (signUpData.password.length < 6) {
+      toast.error('La contraseña debe tener al menos 6 caracteres');
+      return;
+    }
+
+    setLoading(true);
+    try {
+      await signUp(signUpData.email, signUpData.password, {
+        firstName: signUpData.firstName,
+        lastName: signUpData.lastName,
+        phone: signUpData.phone
+      });
+      toast.success('Cuenta creada exitosamente. Ahora puedes iniciar sesión.');
+      setShowSignUp(false);
+      setShowCredentialLogin(true);
+      setCredentials({ email: signUpData.email, password: '' });
+    } catch (error) {
+      toast.error('Error al crear la cuenta: ' + (error.message || 'Datos inválidos'));
+      console.error('Sign up error:', error);
     } finally {
       setLoading(false);
     }
@@ -103,24 +140,126 @@ const Login = () => {
           </p>
         </div>
 
-        {showCredentialLogin ? (
+        {showSignUp ? (
+          <form onSubmit={handleSignUp} className="space-y-4">
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Nombre
+                </label>
+                <input
+                  type="text"
+                  required
+                  value={signUpData.firstName}
+                  onChange={(e) => setSignUpData({...signUpData, firstName: e.target.value})}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-fortex-primary focus:border-transparent"
+                  placeholder="Nombre"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Apellidos
+                </label>
+                <input
+                  type="text"
+                  required
+                  value={signUpData.lastName}
+                  onChange={(e) => setSignUpData({...signUpData, lastName: e.target.value})}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-fortex-primary focus:border-transparent"
+                  placeholder="Apellidos"
+                />
+              </div>
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Correo Electrónico
+              </label>
+              <div className="relative">
+                <SafeIcon icon={FiMail} className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
+                <input
+                  type="email"
+                  required
+                  value={signUpData.email}
+                  onChange={(e) => setSignUpData({...signUpData, email: e.target.value})}
+                  className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-fortex-primary focus:border-transparent"
+                  placeholder="tu@email.com"
+                />
+              </div>
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Teléfono
+              </label>
+              <input
+                type="tel"
+                value={signUpData.phone}
+                onChange={(e) => setSignUpData({...signUpData, phone: e.target.value})}
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-fortex-primary focus:border-transparent"
+                placeholder="+52 81 1234 5678"
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Contraseña
+              </label>
+              <div className="relative">
+                <SafeIcon icon={FiLock} className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
+                <input
+                  type="password"
+                  required
+                  value={signUpData.password}
+                  onChange={(e) => setSignUpData({...signUpData, password: e.target.value})}
+                  className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-fortex-primary focus:border-transparent"
+                  placeholder="••••••••"
+                />
+              </div>
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Confirmar Contraseña
+              </label>
+              <div className="relative">
+                <SafeIcon icon={FiLock} className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
+                <input
+                  type="password"
+                  required
+                  value={signUpData.confirmPassword}
+                  onChange={(e) => setSignUpData({...signUpData, confirmPassword: e.target.value})}
+                  className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-fortex-primary focus:border-transparent"
+                  placeholder="••••••••"
+                />
+              </div>
+            </div>
+            <button
+              type="submit"
+              disabled={loading}
+              className="w-full bg-fortex-primary text-white py-3 px-4 rounded-lg hover:bg-fortex-secondary transition-colors font-medium"
+            >
+              {loading ? 'Creando cuenta...' : 'Crear cuenta'}
+            </button>
+            <div className="text-center mt-4">
+              <button
+                type="button"
+                onClick={() => {setShowSignUp(false); setShowCredentialLogin(true);}}
+                className="text-fortex-primary hover:text-fortex-secondary text-sm font-medium transition-colors"
+              >
+                ¿Ya tienes cuenta? Inicia sesión
+              </button>
+            </div>
+          </form>
+        ) : showCredentialLogin ? (
           <form onSubmit={handleCredentialLogin} className="space-y-4">
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
                 Correo Electrónico
               </label>
               <div className="relative">
-                <SafeIcon
-                  icon={FiMail}
-                  className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5"
-                />
+                <SafeIcon icon={FiMail} className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
                 <input
                   type="email"
                   required
                   value={credentials.email}
-                  onChange={(e) =>
-                    setCredentials({ ...credentials, email: e.target.value })
-                  }
+                  onChange={(e) => setCredentials({...credentials, email: e.target.value})}
                   className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-fortex-primary focus:border-transparent"
                   placeholder="tu@email.com"
                 />
@@ -131,17 +270,12 @@ const Login = () => {
                 Contraseña
               </label>
               <div className="relative">
-                <SafeIcon
-                  icon={FiLock}
-                  className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5"
-                />
+                <SafeIcon icon={FiLock} className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
                 <input
                   type="password"
                   required
                   value={credentials.password}
-                  onChange={(e) =>
-                    setCredentials({ ...credentials, password: e.target.value })
-                  }
+                  onChange={(e) => setCredentials({...credentials, password: e.target.value})}
                   className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-fortex-primary focus:border-transparent"
                   placeholder="••••••••"
                 />
@@ -154,13 +288,21 @@ const Login = () => {
             >
               {loading ? 'Iniciando sesión...' : 'Iniciar Sesión'}
             </button>
-            <div className="text-center mt-4">
+            <div className="text-center mt-4 flex justify-between">
               <button
                 type="button"
                 onClick={() => setShowCredentialLogin(false)}
                 className="text-fortex-primary hover:text-fortex-secondary text-sm font-medium transition-colors"
               >
-                Ver otras opciones de acceso
+                Ver otras opciones
+              </button>
+              <button
+                type="button"
+                onClick={() => {setShowCredentialLogin(false); setShowSignUp(true);}}
+                className="flex items-center space-x-1 text-fortex-primary hover:text-fortex-secondary text-sm font-medium transition-colors"
+              >
+                <SafeIcon icon={FiUserPlus} className="w-4 h-4" />
+                <span>Crear cuenta</span>
               </button>
             </div>
           </form>
@@ -168,11 +310,11 @@ const Login = () => {
           <div className="text-center space-y-4">
             <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
               <p className="text-sm text-blue-800">
-                Para acceder al portal, utiliza el enlace enviado a tu correo electrónico,
+                Para acceder al portal, utiliza el enlace enviado a tu correo electrónico, 
                 accede con tus credenciales o prueba el acceso demo.
               </p>
             </div>
-
+            
             {/* Botón Credenciales */}
             <motion.button
               onClick={() => setShowCredentialLogin(true)}
@@ -182,7 +324,17 @@ const Login = () => {
             >
               Acceder con Email y Contraseña
             </motion.button>
-
+            
+            {/* Botón Crear cuenta */}
+            <motion.button
+              onClick={() => setShowSignUp(true)}
+              className="w-full border border-fortex-primary text-fortex-primary py-3 px-4 rounded-lg hover:bg-fortex-primary hover:text-white transition-colors font-medium"
+              whileHover={{ scale: 1.02 }}
+              whileTap={{ scale: 0.98 }}
+            >
+              Crear cuenta nueva
+            </motion.button>
+            
             <div className="text-center">
               <div className="relative">
                 <div className="absolute inset-0 flex items-center">
@@ -193,7 +345,7 @@ const Login = () => {
                 </div>
               </div>
             </div>
-
+            
             {/* Botón Demo */}
             <motion.button
               onClick={handleDemoLogin}
@@ -203,7 +355,7 @@ const Login = () => {
             >
               🚀 Acceder como Demo Cliente
             </motion.button>
-
+            
             <div className="text-center mt-6">
               <p className="text-sm text-gray-600 mb-2">
                 ¿No tienes un enlace de acceso?
