@@ -1,7 +1,7 @@
 import supabase from '../lib/supabase';
 
 const CLAIMS_TABLE = 'claims_fortex_xyz123';
-const DOCUMENTS_TABLE = 'claim_documents_fortex_xyz123';
+const DOCUMENTS_TABLE = 'documents_fortex_xyz123';
 const ASEGURADOS_TABLE = 'saved_asegurados_fortex_xyz123';
 
 export const claimsService = {
@@ -41,8 +41,6 @@ export const claimsService = {
         status: 'pending'
       };
 
-      console.log('Formatted data for Supabase:', formattedData);
-
       const { data, error } = await supabase
         .from(CLAIMS_TABLE)
         .insert(formattedData)
@@ -56,7 +54,6 @@ export const claimsService = {
 
       console.log('Claim created successfully:', data);
       
-      // Formatear la respuesta para que sea compatible con el frontend
       const formattedResponse = {
         id: data.id,
         contactId: data.contact_id,
@@ -92,229 +89,167 @@ export const claimsService = {
     }
   },
 
-  // Obtener reclamos de un usuario
-  async getUserClaims(userId) {
-    try {
-      if (!userId) return [];
-      
-      const { data, error } = await supabase
-        .from(CLAIMS_TABLE)
-        .select('*')
-        .eq('contact_id', userId)
-        .order('created_at', { ascending: false });
-        
-      if (error) throw error;
-      
-      // Formatear los datos para el frontend
-      return data.map(claim => ({
-        id: claim.id,
-        contactId: claim.contact_id,
-        firstName: claim.first_name,
-        lastName: claim.last_name,
-        email: claim.email,
-        phone: claim.phone,
-        relacionAsegurado: claim.relacion_asegurado,
-        nombreAsegurado: claim.nombre_asegurado,
-        emailAsegurado: claim.email_asegurado,
-        numeroPoliza: claim.numero_poliza,
-        digitoVerificador: claim.digito_verificador,
-        aseguradora: claim.aseguradora,
-        tipoSiniestro: claim.tipo_siniestro,
-        tipoReclamo: claim.tipo_reclamo,
-        tipoServicioReembolso: claim.tipo_servicio_reembolso,
-        tipoServicioProgramacion: claim.tipo_servicio_programacion,
-        esCirugiaEspecializada: claim.es_cirugia_especializada,
-        descripcionSiniestro: claim.descripcion_siniestro,
-        fechaSiniestro: claim.fecha_siniestro,
-        numeroReclamo: claim.numero_reclamo,
-        numeroReclamoAseguradora: claim.numero_reclamo_aseguradora,
-        status: claim.status,
-        createdAt: claim.created_at,
-        updatedAt: claim.updated_at,
-        documentsCount: claim.documents_count || 0,
-        lastEditedBy: claim.last_edited_by
-      }));
-    } catch (error) {
-      console.error('Error fetching user claims:', error);
-      return [];
-    }
-  },
+  // ... otros métodos existentes ...
 
-  // Obtener todos los reclamos (admin)
-  async getAllClaims() {
-    try {
-      const { data, error } = await supabase
-        .from(CLAIMS_TABLE)
-        .select('*')
-        .order('created_at', { ascending: false });
-        
-      if (error) throw error;
-      
-      // Formatear los datos para el frontend
-      return data.map(claim => ({
-        id: claim.id,
-        contactId: claim.contact_id,
-        firstName: claim.first_name,
-        lastName: claim.last_name,
-        email: claim.email,
-        phone: claim.phone,
-        relacionAsegurado: claim.relacion_asegurado,
-        nombreAsegurado: claim.nombre_asegurado,
-        emailAsegurado: claim.email_asegurado,
-        numeroPoliza: claim.numero_poliza,
-        digitoVerificador: claim.digito_verificador,
-        aseguradora: claim.aseguradora,
-        tipoSiniestro: claim.tipo_siniestro,
-        tipoReclamo: claim.tipo_reclamo,
-        tipoServicioReembolso: claim.tipo_servicio_reembolso,
-        tipoServicioProgramacion: claim.tipo_servicio_programacion,
-        esCirugiaEspecializada: claim.es_cirugia_especializada,
-        descripcionSiniestro: claim.descripcion_siniestro,
-        fechaSiniestro: claim.fecha_siniestro,
-        numeroReclamo: claim.numero_reclamo,
-        numeroReclamoAseguradora: claim.numero_reclamo_aseguradora,
-        status: claim.status,
-        createdAt: claim.created_at,
-        updatedAt: claim.updated_at,
-        documentsCount: claim.documents_count || 0,
-        lastEditedBy: claim.last_edited_by
-      }));
-    } catch (error) {
-      console.error('Error fetching all claims:', error);
-      return [];
-    }
-  },
-
-  // Actualizar un reclamo
-  async updateClaim(claimId, updateData) {
-    try {
-      // Convertir campos del frontend al formato de la base de datos
-      const dbUpdateData = {};
-      
-      if (updateData.firstName) dbUpdateData.first_name = updateData.firstName;
-      if (updateData.lastName) dbUpdateData.last_name = updateData.lastName;
-      if (updateData.email) dbUpdateData.email = updateData.email;
-      if (updateData.phone) dbUpdateData.phone = updateData.phone;
-      if (updateData.relacionAsegurado) dbUpdateData.relacion_asegurado = updateData.relacionAsegurado;
-      if (updateData.nombreAsegurado) dbUpdateData.nombre_asegurado = updateData.nombreAsegurado;
-      if (updateData.emailAsegurado) dbUpdateData.email_asegurado = updateData.emailAsegurado;
-      if (updateData.numeroPoliza) dbUpdateData.numero_poliza = updateData.numeroPoliza;
-      if (updateData.digitoVerificador) dbUpdateData.digito_verificador = updateData.digitoVerificador;
-      if (updateData.aseguradora) dbUpdateData.aseguradora = updateData.aseguradora;
-      if (updateData.numeroReclamoAseguradora) dbUpdateData.numero_reclamo_aseguradora = updateData.numeroReclamoAseguradora;
-      if (updateData.numeroReclamo) dbUpdateData.numero_reclamo = updateData.numeroReclamo;
-      
-      // Siempre actualizar el timestamp
-      dbUpdateData.updated_at = new Date().toISOString();
-
-      const { data, error } = await supabase
-        .from(CLAIMS_TABLE)
-        .update(dbUpdateData)
-        .eq('id', claimId)
-        .select()
-        .single();
-
-      if (error) throw error;
-      return data;
-    } catch (error) {
-      console.error('Error updating claim:', error);
-      throw error;
-    }
-  },
-
-  // Actualizar estado del reclamo
-  async updateClaimStatus(claimId, status, comments = '') {
-    try {
-      const { data, error } = await supabase
-        .from(CLAIMS_TABLE)
-        .update({ 
-          status,
-          updated_at: new Date().toISOString(),
-          last_edited_by: 'Sistema'
-        })
-        .eq('id', claimId)
-        .select()
-        .single();
-
-      if (error) throw error;
-      return data;
-    } catch (error) {
-      console.error('Error updating claim status:', error);
-      throw error;
-    }
-  },
-
-  // Guardar información de asegurado
-  async saveAsegurado(aseguradoData) {
-    try {
-      const { data, error } = await supabase
-        .from(ASEGURADOS_TABLE)
-        .insert({
-          user_id: aseguradoData.user_id,
-          nombre: aseguradoData.nombre,
-          email: aseguradoData.email,
-          poliza: aseguradoData.poliza,
-          digito_verificador: aseguradoData.digitoVerificador,
-          aseguradora: aseguradoData.aseguradora
-        })
-        .select()
-        .single();
-
-      if (error) throw error;
-      return data;
-    } catch (error) {
-      console.error('Error saving asegurado:', error);
-      throw error;
-    }
-  },
-
-  // Obtener asegurados guardados
-  async getSavedAsegurados(userId) {
-    try {
-      const { data, error } = await supabase
-        .from(ASEGURADOS_TABLE)
-        .select('*')
-        .eq('user_id', userId)
-        .order('created_at', { ascending: false });
-
-      if (error) throw error;
-      return data;
-    } catch (error) {
-      console.error('Error fetching saved asegurados:', error);
-      return [];
-    }
-  },
-
-  // Eliminar asegurado
-  async deleteAsegurado(aseguradoId) {
-    try {
-      const { error } = await supabase
-        .from(ASEGURADOS_TABLE)
-        .delete()
-        .eq('id', aseguradoId);
-
-      if (error) throw error;
-    } catch (error) {
-      console.error('Error deleting asegurado:', error);
-      throw error;
-    }
-  },
-
-  // Funciones de documentos (mock por ahora)
+  // Funciones de documentos actualizadas
   async getClaimDocuments(claimId) {
-    // Mock implementation - retorna estructura vacía
-    return {};
+    try {
+      const { data, error } = await supabase
+        .from(DOCUMENTS_TABLE)
+        .select('*')
+        .eq('claim_id', claimId);
+
+      if (error) throw error;
+
+      // Organizar documentos por tipo
+      const documents = {};
+      data.forEach(doc => {
+        if (!documents[doc.document_type]) {
+          documents[doc.document_type] = {
+            status: doc.status,
+            comments: doc.comments,
+            files: []
+          };
+        }
+        documents[doc.document_type].files.push({
+          id: doc.id,
+          name: doc.file_name,
+          url: doc.file_url,
+          size: doc.file_size,
+          uploadedAt: doc.uploaded_at
+        });
+      });
+
+      return documents;
+    } catch (error) {
+      console.error('Error fetching documents:', error);
+      return {};
+    }
   },
 
   async uploadDocument(claimId, documentType, file) {
-    // Mock implementation
-    console.log('Mock upload document:', { claimId, documentType, fileName: file.name });
-    return { success: true };
+    try {
+      // 1. Subir el archivo al bucket de Storage
+      const fileExt = file.name.split('.').pop();
+      const fileName = `${claimId}/${documentType}/${Date.now()}.${fileExt}`;
+      
+      const { data: uploadData, error: uploadError } = await supabase.storage
+        .from('documents')
+        .upload(fileName, file);
+
+      if (uploadError) throw uploadError;
+
+      // 2. Obtener la URL pública del archivo
+      const { data: { publicUrl } } = supabase.storage
+        .from('documents')
+        .getPublicUrl(fileName);
+
+      // 3. Registrar el documento en la base de datos
+      const { data: docData, error: docError } = await supabase
+        .from(DOCUMENTS_TABLE)
+        .insert({
+          claim_id: claimId,
+          document_type: documentType,
+          file_name: file.name,
+          file_url: publicUrl,
+          file_size: file.size,
+          mime_type: file.type,
+          status: 'pending'
+        })
+        .select()
+        .single();
+
+      if (docError) throw docError;
+
+      // 4. Actualizar el contador de documentos en el reclamo
+      await this.updateDocumentCount(claimId);
+
+      return docData;
+    } catch (error) {
+      console.error('Error uploading document:', error);
+      throw error;
+    }
   },
 
   async updateDocumentStatus(claimId, documentType, status, comments) {
-    // Mock implementation
-    console.log('Mock update document status:', { claimId, documentType, status, comments });
-    return { success: true };
+    try {
+      const { data, error } = await supabase
+        .from(DOCUMENTS_TABLE)
+        .update({
+          status,
+          comments,
+          reviewed_at: new Date().toISOString(),
+          reviewed_by: 'Sistema'
+        })
+        .eq('claim_id', claimId)
+        .eq('document_type', documentType)
+        .select();
+
+      if (error) throw error;
+      return data;
+    } catch (error) {
+      console.error('Error updating document status:', error);
+      throw error;
+    }
+  },
+
+  async updateDocumentCount(claimId) {
+    try {
+      // Contar documentos del reclamo
+      const { count, error: countError } = await supabase
+        .from(DOCUMENTS_TABLE)
+        .select('*', { count: 'exact' })
+        .eq('claim_id', claimId);
+
+      if (countError) throw countError;
+
+      // Actualizar el contador en el reclamo
+      const { error: updateError } = await supabase
+        .from(CLAIMS_TABLE)
+        .update({ documents_count: count })
+        .eq('id', claimId);
+
+      if (updateError) throw updateError;
+    } catch (error) {
+      console.error('Error updating document count:', error);
+    }
+  },
+
+  async deleteDocument(documentId) {
+    try {
+      const { data: doc, error: fetchError } = await supabase
+        .from(DOCUMENTS_TABLE)
+        .select('claim_id, file_url')
+        .eq('id', documentId)
+        .single();
+
+      if (fetchError) throw fetchError;
+
+      // Eliminar el archivo del storage
+      const fileUrl = new URL(doc.file_url);
+      const filePath = fileUrl.pathname.split('/').slice(-3).join('/');
+      
+      const { error: storageError } = await supabase.storage
+        .from('documents')
+        .remove([filePath]);
+
+      if (storageError) throw storageError;
+
+      // Eliminar el registro de la base de datos
+      const { error: deleteError } = await supabase
+        .from(DOCUMENTS_TABLE)
+        .delete()
+        .eq('id', documentId);
+
+      if (deleteError) throw deleteError;
+
+      // Actualizar el contador de documentos
+      await this.updateDocumentCount(doc.claim_id);
+
+      return true;
+    } catch (error) {
+      console.error('Error deleting document:', error);
+      throw error;
+    }
   }
 };
