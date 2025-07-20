@@ -69,14 +69,11 @@ const ClaimCard = ({ claim, isAdmin = false, onCreateComplemento }) => {
     }
   };
 
-  // Format ID to show a shorter version
+  // Format ID to show a shorter version - usar solo los primeros 8 caracteres del UUID
   const formatClaimNumber = (id) => {
     if (!id) return '';
-    // If the ID is a UUID, take just the first part
-    if (id.includes('-')) {
-      return id.split('-')[0].toUpperCase();
-    }
-    return id.toUpperCase();
+    // Para UUIDs, tomar los primeros 8 caracteres
+    return id.substring(0, 8).toUpperCase();
   };
 
   const claimNumber = formatClaimNumber(claim.id);

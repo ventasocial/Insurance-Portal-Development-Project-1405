@@ -107,7 +107,7 @@ export const claimsService = {
         contactId = user?.id || 'demo-user-' + Math.floor(Math.random() * 1000);
       }
 
-      // Formatear los datos para Supabase
+      // IMPORTANTE: NO incluir el campo 'id' - dejar que Supabase genere el UUID automáticamente
       const formattedData = {
         contact_id: contactId,
         first_name: claimData.firstName || '',
@@ -122,14 +122,17 @@ export const claimsService = {
         aseguradora: claimData.aseguradora || '',
         tipo_siniestro: claimData.tipoSiniestro || '',
         tipo_reclamo: claimData.tipoReclamo || '',
-        tipo_servicio_reembolso: Array.isArray(claimData.servicios) ? claimData.servicios.join(',') : '',
-        tipo_servicio_programacion: Array.isArray(claimData.servicios) ? claimData.servicios.join(',') : '',
+        tipo_servicio_reembolso: Array.isArray(claimData.servicios) ? claimData.servicios.join(',') : (claimData.tipoServicioReembolso || ''),
+        tipo_servicio_programacion: Array.isArray(claimData.servicios) ? claimData.servicios.join(',') : (claimData.tipoServicioProgramacion || ''),
         es_cirugia_especializada: claimData.esCirugiaEspecializada || false,
         descripcion_siniestro: claimData.descripcionSiniestro || '',
         fecha_siniestro: claimData.fechaSiniestro || null,
         numero_reclamo: claimData.numeroReclamo || '',
         status: 'pending'
       };
+
+      // Log para debug
+      console.log('Formatted data for Supabase:', formattedData);
 
       const { data, error } = await supabase
         .from(CLAIMS_TABLE)
