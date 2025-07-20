@@ -20,6 +20,7 @@ const DocumentUpload = () => {
   const [loading, setLoading] = useState(false);
   const [showArchiveConfirm, setShowArchiveConfirm] = useState(false);
   const [sendingStatus, setSendingStatus] = useState(false);
+  const [uploadingDocType, setUploadingDocType] = useState(null);
 
   useEffect(() => {
     const currentClaim = claims.find(c => c.id === claimId);
@@ -38,6 +39,7 @@ const DocumentUpload = () => {
   const loadDocuments = async (claimData) => {
     try {
       const docs = await claimsService.getClaimDocuments(claimData.id);
+      console.log("Loaded documents:", docs);
       setDocuments(docs);
     } catch (error) {
       console.error('Error loading documents:', error);
@@ -75,10 +77,14 @@ const DocumentUpload = () => {
       // Agregar documentos específicos según el tipo de servicio
       const servicios = tipoServicioReembolso ? tipoServicioReembolso.split(',') : [];
       if (servicios.includes('hospitales')) {
-        documents.documentosSiniestro.push({ key: 'facturaHospitales', name: 'Factura de Hospitales', required: true });
+        documents.documentosSiniestro.push(
+          { key: 'facturaHospitales', name: 'Factura de Hospitales', required: true }
+        );
       }
       if (servicios.includes('honorarios-medicos')) {
-        documents.documentosSiniestro.push({ key: 'facturaHonorariosMedicos', name: 'Factura de Honorarios Médicos', required: true });
+        documents.documentosSiniestro.push(
+          { key: 'facturaHonorariosMedicos', name: 'Factura de Honorarios Médicos', required: true }
+        );
       }
       if (servicios.includes('estudios-laboratorio')) {
         documents.documentosSiniestro.push(
@@ -118,14 +124,20 @@ const DocumentUpload = () => {
       const servicios = tipoServicioProgramacion ? tipoServicioProgramacion.split(',') : [];
       if (servicios.includes('cirugia')) {
         if (esCirugiaEspecializada) {
-          documents.formasAseguradora.push({ key: 'formatoCirugiaEspecializada', name: 'Formato de Cirugía de Traumatología, Ortopedia y Neurocirugía', required: true });
+          documents.formasAseguradora.push(
+            { key: 'formatoCirugiaEspecializada', name: 'Formato de Cirugía de Traumatología, Ortopedia y Neurocirugía', required: true }
+          );
         }
       }
       if (servicios.includes('medicamentos')) {
-        documents.documentosSiniestro.push({ key: 'recetaMedicamentos', name: 'Recetas de Medicamentos', required: true });
+        documents.documentosSiniestro.push(
+          { key: 'recetaMedicamentos', name: 'Recetas de Medicamentos', required: true }
+        );
       }
       if (servicios.includes('rehabilitacion')) {
-        documents.documentosSiniestro.push({ key: 'bitacoraMedico', name: 'Bitácora del Médico (incluyendo número de terapias, sesiones y duración)', required: true });
+        documents.documentosSiniestro.push(
+          { key: 'bitacoraMedico', name: 'Bitácora del Médico (incluyendo número de terapias, sesiones y duración)', required: true }
+        );
       }
     } else if (tipoReclamo === 'maternidad') {
       // Documentos para maternidad
@@ -143,8 +155,10 @@ const DocumentUpload = () => {
   };
 
   const handleFileUpload = async (file, documentType) => {
+    setUploadingDocType(documentType);
     setLoading(true);
     try {
+      console.log(`Uploading file ${file.name} for document type ${documentType}`);
       await claimsService.uploadDocument(claimId, documentType, file);
       toast.success('Documento subido correctamente');
       await loadDocuments(claim);
@@ -153,6 +167,7 @@ const DocumentUpload = () => {
       console.error('Upload error:', error);
     } finally {
       setLoading(false);
+      setUploadingDocType(null);
     }
   };
 
@@ -272,7 +287,7 @@ const DocumentUpload = () => {
               </button>
             </div>
             <h2 className="text-3xl font-bold text-gray-900 mb-2">
-              Documentos - R-{claim.id?.replace('claim-', '').toUpperCase()}
+              Documentos - R-{claim.id?.substring(0, 8).toUpperCase()}
             </h2>
             <p className="text-gray-600">
               Sube los documentos requeridos para tu reclamo de {capitalizeFirstLetter(claim.tipoReclamo)}
@@ -291,6 +306,8 @@ const DocumentUpload = () => {
                 {requiredDocumentsMap.formasAseguradora.map((docType) => {
                   const status = getDocumentStatus(docType.key);
                   const doc = documents[docType.key];
+                  const isUploading = uploadingDocType === docType.key;
+                  
                   return (
                     <motion.div
                       key={docType.key}
@@ -354,7 +371,7 @@ const DocumentUpload = () => {
                         </div>
                       )}
 
-                      {(!doc || status === 'rejected') && (
+                      {(!doc || status === 'rejected' || doc.files.length === 0) && (
                         <DocumentUploadZone
                           onFileUpload={(file) => handleFileUpload(file, docType.key)}
                           documentType={docType.key}
@@ -380,6 +397,8 @@ const DocumentUpload = () => {
                 {requiredDocumentsMap.informacionPersonal.map((docType) => {
                   const status = getDocumentStatus(docType.key);
                   const doc = documents[docType.key];
+                  const isUploading = uploadingDocType === docType.key;
+                  
                   return (
                     <motion.div
                       key={docType.key}
@@ -443,7 +462,7 @@ const DocumentUpload = () => {
                         </div>
                       )}
 
-                      {(!doc || status === 'rejected') && (
+                      {(!doc || status === 'rejected' || doc.files.length === 0) && (
                         <DocumentUploadZone
                           onFileUpload={(file) => handleFileUpload(file, docType.key)}
                           documentType={docType.key}
@@ -469,6 +488,8 @@ const DocumentUpload = () => {
                 {requiredDocumentsMap.documentosSiniestro.map((docType) => {
                   const status = getDocumentStatus(docType.key);
                   const doc = documents[docType.key];
+                  const isUploading = uploadingDocType === docType.key;
+                  
                   return (
                     <motion.div
                       key={docType.key}
@@ -532,7 +553,7 @@ const DocumentUpload = () => {
                         </div>
                       )}
 
-                      {(!doc || status === 'rejected') && (
+                      {(!doc || status === 'rejected' || doc.files.length === 0) && (
                         <DocumentUploadZone
                           onFileUpload={(file) => handleFileUpload(file, docType.key)}
                           documentType={docType.key}
@@ -555,7 +576,6 @@ const DocumentUpload = () => {
               <SafeIcon icon={FiArchive} className="w-4 h-4" />
               <span>Archivar</span>
             </button>
-
             <button
               onClick={handleSendStatus}
               disabled={!canSendStatus() || sendingStatus}

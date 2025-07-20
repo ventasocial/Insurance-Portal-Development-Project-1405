@@ -89,16 +89,25 @@ const NewClaimModal = ({ isOpen, onClose, onClaimCreated, initialData = null }) 
   };
 
   const handleInputChange = (field, value) => {
-    setFormData(prev => ({ ...prev, [field]: value }));
+    setFormData(prev => ({
+      ...prev,
+      [field]: value
+    }));
   };
 
   const handleServiceToggle = (serviceId) => {
     setFormData(prev => {
       const currentServices = prev.servicios || [];
       if (currentServices.includes(serviceId)) {
-        return { ...prev, servicios: currentServices.filter(id => id !== serviceId) };
+        return {
+          ...prev,
+          servicios: currentServices.filter(id => id !== serviceId)
+        };
       } else {
-        return { ...prev, servicios: [...currentServices, serviceId] };
+        return {
+          ...prev,
+          servicios: [...currentServices, serviceId]
+        };
       }
     });
   };
@@ -111,7 +120,8 @@ const NewClaimModal = ({ isOpen, onClose, onClaimCreated, initialData = null }) 
         emailAsegurado: asegurado.email,
         numeroPoliza: asegurado.poliza,
         digitoVerificador: asegurado.digito_verificador,
-        aseguradora: asegurado.aseguradora
+        aseguradora: asegurado.aseguradora,
+        relacionAsegurado: asegurado.relacion_asegurado || prev.relacionAsegurado
       }));
       setSelectedAsegurado(asegurado);
     } else {
@@ -155,7 +165,8 @@ const NewClaimModal = ({ isOpen, onClose, onClaimCreated, initialData = null }) 
         email: formData.emailAsegurado,
         poliza: formData.numeroPoliza,
         digitoVerificador: formData.digitoVerificador,
-        aseguradora: formData.aseguradora
+        aseguradora: formData.aseguradora,
+        relacionAsegurado: formData.relacionAsegurado
       };
 
       // Guardar en Supabase y obtener el ID generado
@@ -178,22 +189,18 @@ const NewClaimModal = ({ isOpen, onClose, onClaimCreated, initialData = null }) 
       toast.error('Por favor ingresa el nombre del asegurado');
       return;
     }
-
     if (!formData.numeroPoliza) {
       toast.error('Por favor ingresa el número de póliza');
       return;
     }
-
     if (!formData.aseguradora) {
       toast.error('Por favor selecciona la aseguradora');
       return;
     }
-
     if (!formData.relacionAsegurado) {
       toast.error('Por favor selecciona la relación con el asegurado');
       return;
     }
-
     if (!formData.tipoReclamo) {
       toast.error('Por favor selecciona el tipo de reclamo');
       return;
@@ -204,17 +211,14 @@ const NewClaimModal = ({ isOpen, onClose, onClaimCreated, initialData = null }) 
       toast.error('El número de WhatsApp debe tener el formato: +52 81 1234 5678');
       return;
     }
-
     if (!validateEmail(formData.email)) {
       toast.error('Por favor ingresa un correo electrónico válido');
       return;
     }
-
     if (formData.emailAsegurado && !validateEmail(formData.emailAsegurado)) {
       toast.error('Por favor ingresa un correo electrónico válido para el asegurado');
       return;
     }
-
     if (formData.tipoReclamo && formData.servicios.length === 0) {
       toast.error('Por favor selecciona al menos un tipo de servicio');
       return;
@@ -244,7 +248,7 @@ const NewClaimModal = ({ isOpen, onClose, onClaimCreated, initialData = null }) 
       if (onClaimCreated) {
         onClaimCreated(newClaim);
       }
-
+      
       // Avanzar al paso de documentos
       setCurrentStep(2);
     } catch (error) {
@@ -265,7 +269,7 @@ const NewClaimModal = ({ isOpen, onClose, onClaimCreated, initialData = null }) 
         window.location.href = `#/claim/${createdClaimId}`;
       }, 500);
     }
-
+    
     // Reset form
     setFormData({
       firstName: user?.firstName || '',
@@ -308,11 +312,13 @@ const NewClaimModal = ({ isOpen, onClose, onClaimCreated, initialData = null }) 
         { key: 'formatoBancario', name: 'Formato Único de Información Bancaria', required: true },
         { key: 'informeMedico', name: 'Informe Médico', required: true },
       ];
+
       documents.informacionPersonal = [
         { key: 'identificacionTitular', name: 'Identificación Oficial del Titular de la Cuenta Bancaria', required: true },
         { key: 'identificacionAsegurado', name: 'Identificación Oficial del Asegurado Afectado o Tutor', required: true },
         { key: 'caratulaEstadoCuenta', name: 'Carátula del Estado de Cuenta', required: true },
       ];
+
       documents.documentosSiniestro = [
         { key: 'facturasReembolso', name: 'Facturas para Reembolso', required: true },
         { key: 'recetasCorrespondientes', name: 'Recetas correspondientes a las facturas', required: true },
@@ -322,7 +328,9 @@ const NewClaimModal = ({ isOpen, onClose, onClaimCreated, initialData = null }) 
       // Agregar documentos específicos según el tipo de servicio
       const servicios = formData.servicios || [];
       if (servicios.includes('hospitales')) {
-        documents.documentosSiniestro.push({ key: 'facturaHospitales', name: 'Factura de Hospitales', required: true });
+        documents.documentosSiniestro.push(
+          { key: 'facturaHospitales', name: 'Factura de Hospitales', required: true }
+        );
       }
 
       // Otros servicios...
@@ -332,6 +340,7 @@ const NewClaimModal = ({ isOpen, onClose, onClaimCreated, initialData = null }) 
         { key: 'avisoAccidente', name: 'Aviso de Accidente o Enfermedad', required: true },
         { key: 'informeMedico', name: 'Informe Médico', required: true },
       ];
+
       // Otros documentos para programación...
     }
 
@@ -380,12 +389,19 @@ const NewClaimModal = ({ isOpen, onClose, onClaimCreated, initialData = null }) 
                     {savedAsegurados.map((asegurado) => (
                       <div
                         key={asegurado.id}
-                        className={`flex justify-between items-center p-3 rounded-md cursor-pointer border ${selectedAsegurado?.id === asegurado.id ? 'bg-blue-50 border-blue-300' : 'border-gray-300'}`}
+                        className={`flex justify-between items-center p-3 rounded-md cursor-pointer border ${
+                          selectedAsegurado?.id === asegurado.id ? 'bg-blue-50 border-blue-300' : 'border-gray-300'
+                        }`}
                         onClick={() => handleAseguradoSelect(asegurado)}
                       >
                         <div className="flex-1">
                           <p className="font-medium text-sm">{asegurado.nombre}</p>
                           <p className="text-xs text-gray-500">Póliza: {asegurado.poliza} - {asegurado.aseguradora}</p>
+                          {asegurado.relacion_asegurado && (
+                            <p className="text-xs text-gray-500">
+                              Relación: {capitalizeFirstLetter(asegurado.relacion_asegurado)}
+                            </p>
+                          )}
                         </div>
                         <button
                           type="button"
@@ -552,7 +568,9 @@ const NewClaimModal = ({ isOpen, onClose, onClaimCreated, initialData = null }) 
                     }}
                     required
                     disabled={initialData?.tipoSiniestro === 'complemento'}
-                    className={`w-full px-3 py-2 border border-gray-300 rounded-lg ${initialData?.tipoSiniestro === 'complemento' ? 'bg-gray-50 text-gray-600' : 'focus:ring-2 focus:ring-fortex-primary focus:border-transparent'}`}
+                    className={`w-full px-3 py-2 border border-gray-300 rounded-lg ${
+                      initialData?.tipoSiniestro === 'complemento' ? 'bg-gray-50 text-gray-600' : 'focus:ring-2 focus:ring-fortex-primary focus:border-transparent'
+                    }`}
                   >
                     <option value="">Seleccionar...</option>
                     <option value="reembolso">Reembolso</option>
@@ -575,7 +593,9 @@ const NewClaimModal = ({ isOpen, onClose, onClaimCreated, initialData = null }) 
                         onChange={(e) => handleInputChange('tipoSiniestro', e.target.value)}
                         required
                         disabled={initialData?.tipoSiniestro === 'complemento'}
-                        className={`w-full px-3 py-2 border border-gray-300 rounded-lg ${initialData?.tipoSiniestro === 'complemento' ? 'bg-gray-50 text-gray-600' : 'focus:ring-2 focus:ring-fortex-primary focus:border-transparent'}`}
+                        className={`w-full px-3 py-2 border border-gray-300 rounded-lg ${
+                          initialData?.tipoSiniestro === 'complemento' ? 'bg-gray-50 text-gray-600' : 'focus:ring-2 focus:ring-fortex-primary focus:border-transparent'
+                        }`}
                       >
                         <option value="">Seleccionar...</option>
                         <option value="inicial">Inicial</option>
@@ -734,8 +754,7 @@ const NewClaimModal = ({ isOpen, onClose, onClaimCreated, initialData = null }) 
               <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
                 <h3 className="font-medium text-blue-800 mb-2">Documentos requeridos para tu reclamo</h3>
                 <p className="text-sm text-blue-700">
-                  Para continuar con el proceso, necesitarás subir los siguientes documentos.
-                  Puedes hacerlo ahora o más tarde desde la página de detalles del reclamo.
+                  Para continuar con el proceso, necesitarás subir los siguientes documentos. Puedes hacerlo ahora o más tarde desde la página de detalles del reclamo.
                 </p>
               </div>
 

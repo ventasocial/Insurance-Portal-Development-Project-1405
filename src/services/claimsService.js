@@ -5,6 +5,96 @@ const DOCUMENTS_TABLE = 'documents_fortex_xyz123';
 const ASEGURADOS_TABLE = 'saved_asegurados_fortex_xyz123';
 
 export const claimsService = {
+  // Obtener reclamos del usuario
+  async getUserClaims(userId) {
+    try {
+      const { data, error } = await supabase
+        .from(CLAIMS_TABLE)
+        .select('*')
+        .eq('contact_id', userId)
+        .neq('status', 'archived')
+        .order('created_at', { ascending: false });
+
+      if (error) throw error;
+
+      return data.map(claim => ({
+        id: claim.id,
+        contactId: claim.contact_id,
+        firstName: claim.first_name,
+        lastName: claim.last_name,
+        email: claim.email,
+        phone: claim.phone,
+        relacionAsegurado: claim.relacion_asegurado,
+        nombreAsegurado: claim.nombre_asegurado,
+        emailAsegurado: claim.email_asegurado,
+        numeroPoliza: claim.numero_poliza,
+        digitoVerificador: claim.digito_verificador,
+        aseguradora: claim.aseguradora,
+        tipoSiniestro: claim.tipo_siniestro,
+        tipoReclamo: claim.tipo_reclamo,
+        tipoServicioReembolso: claim.tipo_servicio_reembolso,
+        tipoServicioProgramacion: claim.tipo_servicio_programacion,
+        esCirugiaEspecializada: claim.es_cirugia_especializada,
+        descripcionSiniestro: claim.descripcion_siniestro,
+        fechaSiniestro: claim.fecha_siniestro,
+        numeroReclamo: claim.numero_reclamo,
+        numeroReclamoAseguradora: claim.numero_reclamo_aseguradora,
+        status: claim.status,
+        createdAt: claim.created_at,
+        updatedAt: claim.updated_at,
+        documentsCount: claim.documents_count || 0,
+        lastEditedBy: claim.last_edited_by
+      }));
+    } catch (error) {
+      console.error('Error fetching user claims:', error);
+      return [];
+    }
+  },
+
+  // Obtener todos los reclamos (para admin)
+  async getAllClaims() {
+    try {
+      const { data, error } = await supabase
+        .from(CLAIMS_TABLE)
+        .select('*')
+        .order('created_at', { ascending: false });
+
+      if (error) throw error;
+
+      return data.map(claim => ({
+        id: claim.id,
+        contactId: claim.contact_id,
+        firstName: claim.first_name,
+        lastName: claim.last_name,
+        email: claim.email,
+        phone: claim.phone,
+        relacionAsegurado: claim.relacion_asegurado,
+        nombreAsegurado: claim.nombre_asegurado,
+        emailAsegurado: claim.email_asegurado,
+        numeroPoliza: claim.numero_poliza,
+        digitoVerificador: claim.digito_verificador,
+        aseguradora: claim.aseguradora,
+        tipoSiniestro: claim.tipo_siniestro,
+        tipoReclamo: claim.tipo_reclamo,
+        tipoServicioReembolso: claim.tipo_servicio_reembolso,
+        tipoServicioProgramacion: claim.tipo_servicio_programacion,
+        esCirugiaEspecializada: claim.es_cirugia_especializada,
+        descripcionSiniestro: claim.descripcion_siniestro,
+        fechaSiniestro: claim.fecha_siniestro,
+        numeroReclamo: claim.numero_reclamo,
+        numeroReclamoAseguradora: claim.numero_reclamo_aseguradora,
+        status: claim.status,
+        createdAt: claim.created_at,
+        updatedAt: claim.updated_at,
+        documentsCount: claim.documents_count || 0,
+        lastEditedBy: claim.last_edited_by
+      }));
+    } catch (error) {
+      console.error('Error fetching all claims:', error);
+      return [];
+    }
+  },
+
   // Crear un nuevo reclamo
   async createClaim(claimData) {
     try {
@@ -89,9 +179,115 @@ export const claimsService = {
     }
   },
 
-  // ... otros métodos existentes ...
+  // Actualizar un reclamo existente
+  async updateClaim(claimId, updates) {
+    try {
+      // Convertir las claves en formato camelCase a snake_case para Supabase
+      const snakeCaseUpdates = Object.entries(updates).reduce((acc, [key, value]) => {
+        const snakeKey = key.replace(/[A-Z]/g, letter => `_${letter.toLowerCase()}`);
+        acc[snakeKey] = value;
+        return acc;
+      }, {});
 
-  // Funciones de documentos actualizadas
+      // Añadir timestamp de actualización
+      snakeCaseUpdates.updated_at = new Date().toISOString();
+
+      const { data, error } = await supabase
+        .from(CLAIMS_TABLE)
+        .update(snakeCaseUpdates)
+        .eq('id', claimId)
+        .select()
+        .single();
+
+      if (error) throw error;
+
+      return data;
+    } catch (error) {
+      console.error('Error updating claim:', error);
+      throw error;
+    }
+  },
+
+  // Actualizar el estado de un reclamo
+  async updateClaimStatus(claimId, status, comments = '') {
+    try {
+      const { data, error } = await supabase
+        .from(CLAIMS_TABLE)
+        .update({
+          status,
+          updated_at: new Date().toISOString(),
+          last_edited_by: 'Sistema'
+        })
+        .eq('id', claimId)
+        .select()
+        .single();
+
+      if (error) throw error;
+      return data;
+    } catch (error) {
+      console.error('Error updating claim status:', error);
+      throw error;
+    }
+  },
+
+  // Guardar información de un asegurado para reutilizar
+  async saveAsegurado(aseguradoData) {
+    try {
+      const { data, error } = await supabase
+        .from(ASEGURADOS_TABLE)
+        .insert({
+          user_id: aseguradoData.user_id,
+          nombre: aseguradoData.nombre,
+          email: aseguradoData.email,
+          poliza: aseguradoData.poliza,
+          digito_verificador: aseguradoData.digitoVerificador,
+          aseguradora: aseguradoData.aseguradora,
+          relacion_asegurado: aseguradoData.relacionAsegurado
+        })
+        .select()
+        .single();
+
+      if (error) throw error;
+      return data;
+    } catch (error) {
+      console.error('Error saving asegurado:', error);
+      throw error;
+    }
+  },
+
+  // Obtener asegurados guardados de un usuario
+  async getSavedAsegurados(userId) {
+    try {
+      const { data, error } = await supabase
+        .from(ASEGURADOS_TABLE)
+        .select('*')
+        .eq('user_id', userId);
+
+      if (error) throw error;
+      return data;
+    } catch (error) {
+      console.error('Error fetching saved asegurados:', error);
+      return [];
+    }
+  },
+
+  // Eliminar un asegurado guardado
+  async deleteAsegurado(aseguradoId) {
+    try {
+      const { error } = await supabase
+        .from(ASEGURADOS_TABLE)
+        .delete()
+        .eq('id', aseguradoId);
+
+      if (error) throw error;
+      return true;
+    } catch (error) {
+      console.error('Error deleting asegurado:', error);
+      throw error;
+    }
+  },
+
+  // Funciones de documentos
   async getClaimDocuments(claimId) {
     try {
       const { data, error } = await supabase
@@ -129,20 +325,30 @@ export const claimsService = {
 
   async uploadDocument(claimId, documentType, file) {
     try {
+      console.log('Uploading document:', documentType, 'for claim:', claimId);
+      
       // 1. Subir el archivo al bucket de Storage
       const fileExt = file.name.split('.').pop();
       const fileName = `${claimId}/${documentType}/${Date.now()}.${fileExt}`;
       
+      // Crear un objeto Blob desde el archivo para asegurar compatibilidad
+      const blob = new Blob([file], { type: file.type });
+      
       const { data: uploadData, error: uploadError } = await supabase.storage
         .from('documents')
-        .upload(fileName, file);
+        .upload(fileName, blob);
 
-      if (uploadError) throw uploadError;
+      if (uploadError) {
+        console.error('Storage upload error:', uploadError);
+        throw uploadError;
+      }
 
       // 2. Obtener la URL pública del archivo
       const { data: { publicUrl } } = supabase.storage
         .from('documents')
         .getPublicUrl(fileName);
+
+      console.log('File uploaded successfully, public URL:', publicUrl);
 
       // 3. Registrar el documento en la base de datos
       const { data: docData, error: docError } = await supabase
@@ -159,7 +365,12 @@ export const claimsService = {
         .select()
         .single();
 
-      if (docError) throw docError;
+      if (docError) {
+        console.error('Document DB insert error:', docError);
+        throw docError;
+      }
+
+      console.log('Document record created:', docData);
 
       // 4. Actualizar el contador de documentos en el reclamo
       await this.updateDocumentCount(claimId);
@@ -210,6 +421,8 @@ export const claimsService = {
         .eq('id', claimId);
 
       if (updateError) throw updateError;
+      
+      console.log(`Updated document count for claim ${claimId} to ${count}`);
     } catch (error) {
       console.error('Error updating document count:', error);
     }

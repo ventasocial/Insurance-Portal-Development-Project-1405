@@ -69,8 +69,17 @@ const ClaimCard = ({ claim, isAdmin = false, onCreateComplemento }) => {
     }
   };
 
-  // Extract just the number part from claim ID and convert to uppercase
-  const claimNumber = claim.id?.replace('claim-', '').toUpperCase();
+  // Format ID to show a shorter version
+  const formatClaimNumber = (id) => {
+    if (!id) return '';
+    // If the ID is a UUID, take just the first part
+    if (id.includes('-')) {
+      return id.split('-')[0].toUpperCase();
+    }
+    return id.toUpperCase();
+  };
+
+  const claimNumber = formatClaimNumber(claim.id);
 
   const formatDateTime = (dateString) => {
     if (!dateString) return '';
@@ -80,8 +89,8 @@ const ClaimCard = ({ claim, isAdmin = false, onCreateComplemento }) => {
 
   // Check if complemento button should be shown
   const showComplementoButton = claim.tipoReclamo === 'reembolso' && 
-                                 claim.tipoSiniestro === 'inicial' && 
-                                 claim.numeroReclamoAseguradora;
+    claim.tipoSiniestro === 'inicial' && 
+    claim.numeroReclamoAseguradora;
 
   return (
     <motion.div
